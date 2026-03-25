@@ -43,6 +43,7 @@ document.addEventListener('input',            handleEvents,      false);
 document.addEventListener('submit',           handleEvents,      false);
 document.addEventListener('keydown',          handleKeys,        false);
 document.addEventListener('DOMContentLoaded', checkParameters,   false);
+document.addEventListener('DOMContentLoaded', validateBrioHtmlOnInit, false);
 
 
 // ─── 2. Dynamic event registration ───────────────────────────────────────────
@@ -101,27 +102,71 @@ function handleEvents(event) {
 
 // ─── 4. Keyboard handler ──────────────────────────────────────────────────────
 
-// Index of data-key elements, built at init and kept current via MutationObserver.
-// Maps chord string → array of elements, avoiding a querySelectorAll on every keydown.
-let keyIndex = new Map();
+// Index of data-key elements.
+// Incrementally maintained on DOM changes instead of full map rebuilds.
+let keyIndex = new Map(); // chord string -> Set<HTMLElement>
+const chordByEl = new WeakMap(); // el -> chord string
 
-function buildKeyIndex() {
-  keyIndex = new Map();
-  for (const el of document.body.querySelectorAll('[data-key]')) {
-    const chord = el.dataset.key;
-    if (!keyIndex.has(chord)) keyIndex.set(chord, []);
-    keyIndex.get(chord).push(el);
+function indexKeyElement(el) {
+  if (!(el instanceof Element)) return;
+  const chord = el.dataset.key;
+  if (!chord) return;
+
+  let set = keyIndex.get(chord);
+  if (!set) {
+    set = new Set();
+    keyIndex.set(chord, set);
   }
+  set.add(el);
+  chordByEl.set(el, chord);
 }
 
-// Rebuild the index when elements are added or removed, or when data-key changes.
-const keyIndexObserver = new MutationObserver(buildKeyIndex);
+function unindexKeyElement(el) {
+  if (!(el instanceof Element)) return;
+  const chord = chordByEl.get(el);
+  if (!chord) return;
+
+  const set = keyIndex.get(chord);
+  if (set) {
+    set.delete(el);
+    if (set.size === 0) keyIndex.delete(chord);
+  }
+  chordByEl.delete(el);
+}
+
+function indexKeyTree(root) {
+  if (!root) return;
+  if (root instanceof Element && root.hasAttribute?.('data-key')) indexKeyElement(root);
+  if (root.querySelectorAll) for (const el of root.querySelectorAll('[data-key]')) indexKeyElement(el);
+}
+
+function unindexKeyTree(root) {
+  if (!root) return;
+  if (root instanceof Element && root.hasAttribute?.('data-key')) unindexKeyElement(root);
+  if (root.querySelectorAll) for (const el of root.querySelectorAll('[data-key]')) unindexKeyElement(el);
+}
+
+const keyIndexObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    if (mutation.type === 'childList') {
+      for (const node of mutation.addedNodes) indexKeyTree(node);
+      for (const node of mutation.removedNodes) unindexKeyTree(node);
+      continue;
+    }
+
+    if (mutation.type === 'attributes' && mutation.attributeName === 'data-key') {
+      const el = mutation.target;
+      unindexKeyElement(el);
+      if (el instanceof Element && el.dataset?.key) indexKeyElement(el);
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
-  buildKeyIndex();
+  indexKeyTree(document.body);
   keyIndexObserver.observe(document.body, {
-    childList:  true,
-    subtree:    true,
+    childList: true,
+    subtree: true,
     attributes: true,
     attributeFilter: ['data-key']
   });
@@ -218,5 +263,64 @@ function initiateAction(targetElement, event, action, target) {
     window[action](targetElement, event, target);
   } else {
     console.warn(`[actions] Unknown action: "${action}". Define window.${action} to handle it.`);
+  }
+}
+
+
+// ─── 8. Init-time HTML validation ─────────────────────────────────────────────
+
+function validateBrioHtmlOnInit() {
+  // Validate [data-message][data-for] targets.
+  for (const region of document.querySelectorAll('[data-message][data-for]')) {
+    const id = region.dataset.for;
+    if (!id) continue;
+    if (!document.getElementById(id)) {
+      console.warn(`[feedback] [data-message][data-for="${id}"] points to missing #${id}.`, region);
+    }
+  }
+
+  // Validate actions referenced by data-* attributes.
+  for (const attr of ['click', 'change', 'input', 'submit']) {
+    for (const el of document.querySelectorAll(`[data-${attr}]`)) {
+      validateActionString(el.dataset[attr], el);
+    }
+  }
+}
+
+function validateActionString(action, elForContext = null) {
+  action = (action || '').trim();
+  if (!action) return;
+
+  // Built-in: url redirect — checked before pipe split so URLs containing
+  // a pipe character are not incorrectly split into multiple actions.
+  if (action.startsWith('url:')) return;
+
+  if (action.includes('|')) {
+    for (const single of action.split('|')) validateActionString(single.trim(), elForContext);
+    return;
+  }
+
+  if (action === 'refresh') return;
+
+  const match = action.match(ACTION_REGEX);
+  if (!match) {
+    console.warn('[actions] Could not parse action:', action, elForContext);
+    return;
+  }
+
+  const actionName = match[1];
+  const target = match[2] ?? null;
+
+  // Validate dialog targets (common mistake).
+  if ((actionName === 'openDialog' || actionName === 'closeDialog') && target) {
+    const dialog = document.getElementById(target);
+    if (!(dialog instanceof HTMLDialogElement)) {
+      console.warn(`[actions] ${actionName}(${target}) but no <dialog id="${target}"> found.`, elForContext);
+    }
+  }
+
+  // Validate that the action function exists in global scope.
+  if (typeof window[actionName] !== 'function') {
+    console.warn(`[actions] Unknown action: "${actionName}". Define window.${actionName} to handle it.`, elForContext);
   }
 }

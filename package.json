@@ -20,7 +20,14 @@
   "license": "MIT",
   "author": "Pepijn Gieles",
   "files": [
-    "src/"
+    "src/",
+    "dist/",
+    "brio.js",
+    "scripts/"
   ],
-  "type": "module"
+  "type": "commonjs",
+  "scripts": {
+    "build": "node scripts/build-brio.cjs",
+    "watch": "node scripts/watch-brio.cjs"
+  }
 }

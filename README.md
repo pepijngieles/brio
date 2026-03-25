@@ -26,6 +26,8 @@ HTML declares *what* happens. JavaScript defines *how*. When you scan the HTML, 
 
 ## Getting started
 
+Load the individual core files in this order:
+
 Add the core files, the functional baseline CSS, and your own `project.js` to your page:
 
 ```html

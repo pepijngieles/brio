@@ -22,6 +22,13 @@
       patches: [{ target, html }],  // replace target innerHTML
       append:  [{ target, html }]   // append HTML
     }
+
+  Explicit security contract for patches/append:
+    - `patches[*].html` and `append[*].html` are inserted as HTML into the DOM.
+    - Brio does NOT sanitize by default.
+    - Only use with HTML you trust (typically server-rendered templates you control).
+    - If any HTML can contain untrusted user input, sanitize it first. You can
+      provide a sanitizer via `configureSanitizeHtml(fn)`.
 ----------------------------------------------------------------------------- */
 
 const BRIO_STATE = {};
@@ -151,7 +158,111 @@ function isAllowedBindAttr(attrName) {
   return ALLOWED_BIND_ATTR_PREFIXES.some((prefix) => attrName.startsWith(prefix));
 }
 
-function applyBindings(scope = document, context = null) {
+function compileBindingExpression(expression) {
+  if (!expression) return () => null;
+  const trimmed = String(expression).trim();
+  if (!trimmed) return () => null;
+
+  // Fast path: no template interpolation.
+  if (!trimmed.includes('{{')) {
+    return (context = null) => {
+      const value = resolveToken(trimmed, context);
+      return value == null ? null : value;
+    };
+  }
+
+  // Template mode: replace {{ tokens }}.
+  const parts = [];
+  const re = /\{\{([^}]+)\}\}/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = re.exec(trimmed))) {
+    if (match.index > lastIndex) parts.push(trimmed.slice(lastIndex, match.index));
+    parts.push({ token: match[1].trim() });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < trimmed.length) parts.push(trimmed.slice(lastIndex));
+
+  return (context = null) => {
+    let out = '';
+    for (const part of parts) {
+      if (typeof part === 'string') {
+        out += part;
+      } else {
+        const value = resolveToken(part.token, context);
+        out += value == null ? '' : String(value);
+      }
+    }
+    return out;
+  };
+}
+
+// Binding caches so `refreshBindings()` doesn't scan `*` repeatedly.
+let bindingIndexInitialized = false;
+const indexedTextBindEls = new WeakSet();
+const indexedAttrBindEls = new WeakSet();
+const warnedUnsupportedBindEls = new WeakSet();
+
+const textBindEntries = []; // { el, fn }
+const attrBindEntries = []; // { el, attrName, fn }
+
+let brioSanitizeHtml = null; // (html, { opType, targetSelector }) => string
+let warnedUnsafeHtmlInsert = false;
+
+function configureSanitizeHtml(fn) {
+  brioSanitizeHtml = (typeof fn === 'function') ? fn : null;
+}
+
+window.configureSanitizeHtml = configureSanitizeHtml;
+
+function indexBindingsWithin(root) {
+  if (!root) return;
+
+  // Text bindings: [data-bind]
+  const bindNodes = [];
+  if (root.nodeType === Node.ELEMENT_NODE && root.hasAttribute?.('data-bind')) bindNodes.push(root);
+  if (root.querySelectorAll) bindNodes.push(...root.querySelectorAll('[data-bind]'));
+
+  for (const el of bindNodes) {
+    if (indexedTextBindEls.has(el)) continue;
+    indexedTextBindEls.add(el);
+    textBindEntries.push({
+      el,
+      fn: compileBindingExpression(el.dataset.bind),
+    });
+  }
+
+  // Attribute bindings: data-bind-*
+  const allNodes = [];
+  if (root.nodeType === Node.ELEMENT_NODE) allNodes.push(root);
+  if (root.querySelectorAll) allNodes.push(...root.querySelectorAll('*'));
+
+  for (const el of allNodes) {
+    if (indexedAttrBindEls.has(el)) continue;
+    indexedAttrBindEls.add(el);
+
+    for (const [datasetKey, expression] of Object.entries(el.dataset || {})) {
+      if (!datasetKey.startsWith('bind') || datasetKey === 'bind') continue;
+      const attrName = normalizeDatasetBindKey(datasetKey);
+      if (!isAllowedBindAttr(attrName)) {
+        if (!warnedUnsupportedBindEls.has(el)) {
+          warnedUnsupportedBindEls.add(el);
+          console.warn(`[binding] Skipping unsupported bind attribute "${attrName}" on`, el);
+        }
+        continue;
+      }
+
+      attrBindEntries.push({
+        el,
+        attrName,
+        fn: compileBindingExpression(expression),
+      });
+    }
+  }
+}
+
+function applyBindingsLocal(scope = document, context = null) {
   const root = scope || document;
   const bindNodes = [];
 
@@ -183,6 +294,36 @@ function applyBindings(scope = document, context = null) {
   }
 }
 
+function applyBindings(scope = document, context = null) {
+  const root = scope || document;
+
+  if (root === document) {
+    if (!bindingIndexInitialized) {
+      indexBindingsWithin(document);
+      bindingIndexInitialized = true;
+    }
+
+    // Update cached bindings.
+    for (const entry of textBindEntries) {
+      if (!entry.el.isConnected) continue;
+      const value = entry.fn(context);
+      entry.el.textContent = value == null ? '' : String(value);
+    }
+
+    for (const entry of attrBindEntries) {
+      if (!entry.el.isConnected) continue;
+      const value = entry.fn(context);
+      applyBoundAttribute(entry.el, entry.attrName, value);
+    }
+    return;
+  }
+
+  // For sub-scopes (templates/fragments/patch targets), do the old local scan.
+  // We also index these nodes so future full refreshes can update them fast.
+  indexBindingsWithin(root);
+  applyBindingsLocal(root, context);
+}
+
 function renderTemplateItems(target, templateId, items) {
   const template = document.getElementById(templateId);
   if (!(template instanceof HTMLTemplateElement)) {
@@ -192,6 +333,7 @@ function renderTemplateItems(target, templateId, items) {
 
   for (const item of items) {
     const fragment = template.content.cloneNode(true);
+    indexBindingsWithin(fragment);
     applyBindings(fragment, item);
     target.appendChild(fragment);
   }
@@ -201,7 +343,20 @@ function applyPatches(patches = []) {
   for (const patch of patches) {
     const target = document.querySelector(patch.target);
     if (!target) continue;
-    if (patch.html != null) target.innerHTML = patch.html;
+    if (patch.html != null) {
+      if (!brioSanitizeHtml && !warnedUnsafeHtmlInsert) {
+        warnedUnsafeHtmlInsert = true;
+        console.warn(
+          '[binding] Security contract: patches/append insert HTML without sanitization. ' +
+          'Trusted HTML only. For untrusted HTML, call configureSanitizeHtml(fn).'
+        );
+      }
+      const html = brioSanitizeHtml
+        ? String(brioSanitizeHtml(patch.html, { opType: 'patch', targetSelector: patch.target }))
+        : patch.html;
+      target.innerHTML = html;
+    }
+    indexBindingsWithin(target);
     applyBindings(target);
   }
 }
@@ -233,7 +388,18 @@ function applyAppend(append = [], form = null) {
     }
 
     if (op.html != null) {
-      target.insertAdjacentHTML('beforeend', op.html);
+      if (!brioSanitizeHtml && !warnedUnsafeHtmlInsert) {
+        warnedUnsafeHtmlInsert = true;
+        console.warn(
+          '[binding] Security contract: patches/append insert HTML without sanitization. ' +
+          'Trusted HTML only. For untrusted HTML, call configureSanitizeHtml(fn).'
+        );
+      }
+      const html = brioSanitizeHtml
+        ? String(brioSanitizeHtml(op.html, { opType: 'append', targetSelector: op.target || null }))
+        : op.html;
+      target.insertAdjacentHTML('beforeend', html);
+      indexBindingsWithin(target);
       applyBindings(target);
     }
   }

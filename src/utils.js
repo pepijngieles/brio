@@ -1,10 +1,32 @@
 /* Utilities
   -----------------------------------------------------------------------------
   Requires: defer attribute or placement before </body>
-  Dependencies:
-  - getData assumes a `jwtToken` variable in scope
-  - getRelativeDate assumes a `translations` object in scope: { today, yesterday }
+  Dependencies (recommended config hooks):
+  - getData uses `configureAuth(fn)` (fallback: legacy global `jwtToken`)
+  - getRelativeDate uses `configureTranslations(obj)` (fallback: legacy global `translations`)
 ----------------------------------------------------------------------------- */
+
+// ─── Configuration hooks ──────────────────────────────────────────────────────
+
+let brioAuthProvider = null; // () => string | Promise<string>
+let brioTranslations = null; // { today, yesterday }
+let warnedMissingAuth = false;
+let warnedMissingTranslations = false;
+
+function configureAuth(provider) {
+  if (provider == null) {
+    brioAuthProvider = null;
+    return;
+  }
+  brioAuthProvider = (typeof provider === 'function') ? provider : () => provider;
+}
+
+function configureTranslations(obj) {
+  brioTranslations = (obj && typeof obj === 'object') ? obj : null;
+}
+
+window.configureAuth = configureAuth;
+window.configureTranslations = configureTranslations;
 
 
 /* 1. DOM helpers
@@ -155,6 +177,15 @@ function getStorageItem(item, defaultValue) {
 
 // Requires a `translations` object in scope: { today: '...', yesterday: '...' }
 function getRelativeDate(timestamp) {
+  const t = brioTranslations || (typeof translations !== 'undefined' ? translations : null);
+  if (!t || !t.today || !t.yesterday) {
+    if (!warnedMissingTranslations) {
+      warnedMissingTranslations = true;
+      console.warn('[utils] getRelativeDate requires configureTranslations({ today, yesterday }) (or legacy global `translations`).');
+    }
+    return new Date(timestamp).toLocaleDateString(document.documentElement.lang);
+  }
+
   let today    = new Date(),
       date     = new Date(timestamp),
       lang     = document.documentElement.lang,
@@ -165,8 +196,8 @@ function getRelativeDate(timestamp) {
 
   let difference = today - date;
 
-  if (difference < msInDay)      return translations['today'];
-  if (difference < msInDay * 2)  return translations['yesterday'];
+  if (difference < msInDay)      return t['today'];
+  if (difference < msInDay * 2)  return t['yesterday'];
   if (difference < msInWeek)     return ucFirst(day);
   else                           return date.getDate() + ' ' + month;
 }
@@ -177,9 +208,21 @@ function getRelativeDate(timestamp) {
 
 // Requires a `jwtToken` variable in scope
 async function getData(url, parse) {
+  const token = brioAuthProvider
+    ? await brioAuthProvider()
+    : (typeof jwtToken !== 'undefined' ? jwtToken : null);
+
+  if (!token) {
+    if (!warnedMissingAuth) {
+      warnedMissingAuth = true;
+      console.warn('[utils] getData requires configureAuth(fn) (or legacy global `jwtToken`).');
+    }
+    throw new Error('[utils] Missing auth token. Call configureAuth(fn) first.');
+  }
+
   const response = await fetch(url, {
     headers: {
-      'Authorization': 'Bearer ' + jwtToken,
+      'Authorization': 'Bearer ' + token,
       'Content-Type':  'application/json'
     }
   });
