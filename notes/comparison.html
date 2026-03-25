@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brio — Competitive Analysis</title>
+  <style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0f0f0f;
+      --surface:    #1a1a1a;
+      --surface-2:  #1f1f1f;
+      --border:     #2a2a2a;
+      --text:       #e8e4dc;
+      --muted:      #7a7570;
+      --accent:     #c8b89a;
+      --accent-dim: #9a8a76;
+      --green:      #70b88a;
+      --red:        #e07878;
+      --yellow:     #c8a870;
+      --blue:       #70a0c8;
+      --radius:     5px;
+      --header-h:   52px;
+      font-size: 15px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      line-height: 1.7;
+    }
+
+    /* ── Top bar ─────────────────────────────────────────────────────── */
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      height: var(--header-h);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 clamp(1.25rem, 5vw, 3.5rem);
+      gap: 0.75rem;
+      z-index: 10;
+    }
+
+    .topbar-title {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .topbar-sub {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    /* ── Page ────────────────────────────────────────────────────────── */
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 5vw, 3.5rem) 6rem;
+    }
+
+    /* ── Section headings ────────────────────────────────────────────── */
+
+    .eyebrow {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.4rem;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: normal;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .lead {
+      font-size: clamp(0.9rem, 2vw, 1rem);
+      color: var(--muted);
+      max-width: 680px;
+      margin-bottom: 3.5rem;
+      line-height: 1.7;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: normal;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Framework cards ─────────────────────────────────────────────── */
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 4rem;
+    }
+
+    .card {
+      background: var(--surface);
+      padding: 1.5rem;
+    }
+
+    .card-name {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-made-by {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .card-stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-stat:last-child { border-bottom: none; }
+
+    .card-stat strong {
+      color: var(--text);
+      font-weight: normal;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+    }
+
+    .card-tagline {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ── Feature matrix ──────────────────────────────────────────────── */
+
+    .matrix-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 4rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+      font-size: 0.85rem;
+    }
+
+    thead tr {
+      background: var(--surface-2);
+    }
+
+    th {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+      white-space: nowrap;
+    }
+
+    th:first-child { width: 240px; }
+
+    th.brio-col { color: var(--accent); }
+
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    td:first-child {
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    td.brio-col { background: color-mix(in srgb, var(--accent) 3%, transparent); }
+
+    .row-group td {
+      background: var(--surface-2);
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover td:not(.row-group td) { background: var(--surface); }
+    tr:hover td.brio-col { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+    /* ── Symbols ─────────────────────────────────────────────────────── */
+
+    .yes   { color: var(--green); }
+    .no    { color: var(--red); opacity: 0.7; }
+    .part  { color: var(--yellow); }
+    .note  { font-size: 0.78rem; color: var(--muted); display: block; margin-top: 0.2rem; }
+
+    /* ── Verdict blocks ──────────────────────────────────────────────── */
+
+    .verdicts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    .verdict {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .verdict-name {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .verdict h3 {
+      font-size: 0.9rem;
+      font-weight: normal;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .verdict p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .verdict ul {
+      margin: 0.5rem 0 0 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .verdict ul li { margin-bottom: 0.25rem; line-height: 1.5; }
+
+    /* ── Positioning section ─────────────────────────────────────────── */
+
+    .positioning {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    .pos-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .pos-block h3 {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .pos-block p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .pos-block p + p { margin-top: 0.65rem; }
+
+    .pos-block.highlight {
+      border-color: var(--accent-dim);
+      background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    }
+
+    .pos-block.highlight h3 { color: var(--accent); }
+
+    /* ── Callout ─────────────────────────────────────────────────────── */
+
+    .callout {
+      border-left: 3px solid var(--accent-dim);
+      background: var(--surface);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.25rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 4rem;
+      line-height: 1.65;
+    }
+
+    .callout strong { color: var(--text); }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+
+    @media (max-width: 720px) {
+      .positioning { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="topbar-title">Brio</span>
+  <span class="topbar-sub">— competitive landscape</span>
+</header>
+
+<div class="page">
+
+  <div class="eyebrow">Analysis</div>
+  <h1>How Brio fits the landscape</h1>
+  <p class="lead">A direct comparison of Brio against the three frameworks doing similar work: Alpine.js, HTMX, and Stimulus. What each one gets right, where each falls short, and where Brio has a genuine opening.</p>
+
+
+  <!-- ── Framework snapshots ─────────────────────────────────────── -->
+
+  <h2>The four frameworks</h2>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-name">Brio</div>
+      <div class="card-made-by">Your project</div>
+      <div class="card-stat"><span>Size</span><strong>~5 KB est.</strong></div>
+      <div class="card-stat"><span>Build step</span><strong>None</strong></div>
+      <div class="card-stat"><span>Dependencies</span><strong>Zero</strong></div>
+      <div class="card-stat"><span>Model</span><strong>Event delegation</strong></div>
+      <div class="card-stat"><span>State</span><strong>None / DOM-based</strong></div>
+      <div class="card-tagline">"Declarative behaviour via data-attributes. One listener, no magic."</div>
+    </div>
+    <div class="card">
+      <div class="card-name">Alpine.js</div>
+      <div class="card-made-by">Caleb Porzio, 2019</div>
+      <div class="card-stat"><span>Size</span><strong>~15 KB gz</strong></div>
+      <div class="card-stat"><span>Build step</span><strong>None (CDN)</strong></div>
+      <div class="card-stat"><span>Dependencies</span><strong>Zero</strong></div>
+      <div class="card-stat"><span>Model</span><strong>Reactive data tree</strong></div>
+      <div class="card-stat"><span>State</span><strong>In-attribute JS</strong></div>
+      <div class="card-tagline">"Like Vue, but you write it in your HTML attributes."</div>
+    </div>
+    <div class="card">
+      <div class="card-name">HTMX</div>
+      <div class="card-made-by">Carson Gross, 2020</div>
+      <div class="card-stat"><span>Size</span><strong>~14 KB gz</strong></div>
+      <div class="card-stat"><span>Build step</span><strong>None (CDN)</strong></div>
+      <div class="card-stat"><span>Dependencies</span><strong>Zero</strong></div>
+      <div class="card-stat"><span>Model</span><strong>Server-driven HTML</strong></div>
+      <div class="card-stat"><span>State</span><strong>Lives on server</strong></div>
+      <div class="card-tagline">"The server sends HTML fragments; HTMX patches them into the DOM."</div>
+    </div>
+    <div class="card">
+      <div class="card-name">Stimulus</div>
+      <div class="card-made-by">37signals (Basecamp), 2018</div>
+      <div class="card-stat"><span>Size</span><strong>~7 KB gz</strong></div>
+      <div class="card-stat"><span>Build step</span><strong>Requires bundler</strong></div>
+      <div class="card-stat"><span>Dependencies</span><strong>Zero (at runtime)</strong></div>
+      <div class="card-stat"><span>Model</span><strong>Controller classes</strong></div>
+      <div class="card-stat"><span>State</span><strong>In controller instances</strong></div>
+      <div class="card-tagline">"Controllers as JS classes, wired to HTML via data-attributes."</div>
+    </div>
+  </div>
+
+
+  <!-- ── Feature matrix ─────────────────────────────────────────── -->
+
+  <h2>Feature matrix</h2>
+
+  <div class="matrix-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th class="brio-col">Brio</th>
+          <th>Alpine.js</th>
+          <th>HTMX</th>
+          <th>Stimulus</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr class="row-group"><td colspan="5">Core model</td></tr>
+        <tr>
+          <td>No build step</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="no">✗ No</span><span class="note">Requires ES modules / bundler</span></td>
+        </tr>
+        <tr>
+          <td>Zero dependencies</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+        </tr>
+        <tr>
+          <td>Behaviour in HTML attributes</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-click, data-submit etc.</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">x-on:click, @click etc.</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">hx-get, hx-post etc.</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">data-action wires to controller methods</span></td>
+        </tr>
+        <tr>
+          <td>Reactive state / data binding</td>
+          <td class="brio-col"><span class="no">✗ No</span><span class="note">By design — no virtual DOM, no reactivity layer</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">x-data, x-model, x-text — full reactivity</span></td>
+          <td><span class="no">✗ No</span><span class="note">State lives on the server</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Value API provides typed, observable properties</span></td>
+        </tr>
+        <tr>
+          <td>Server round-trip for updates</td>
+          <td class="brio-col"><span class="no">✗ No</span><span class="note">Purely client-side</span></td>
+          <td><span class="no">✗ No</span><span class="note">Purely client-side</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">Core feature — server returns HTML fragments</span></td>
+          <td><span class="no">✗ No</span><span class="note">Purely client-side (pairs with Turbo for server updates)</span></td>
+        </tr>
+
+        <tr class="row-group"><td colspan="5">Event handling</td></tr>
+        <tr>
+          <td>Click / change / submit events</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+        </tr>
+        <tr>
+          <td>Keyboard shortcuts / chords</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-key with full modifier chord support</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">@keydown.enter etc., no chord system</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>URL / query param triggers</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">?action= runs any action on page load</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">hx-trigger can fire on load</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Custom / extra event types</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">registerEvent() — one line</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">Any event via @eventname</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+        </tr>
+        <tr>
+          <td>Chained / pipe actions</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-click="fn1|fn2(target)"</span></td>
+          <td><span class="no">✗ No</span><span class="note">Must use inline JS or a function call</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Multiple hx-on attributes, no direct pipe</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+
+        <tr class="row-group"><td colspan="5">UI components (built-in)</td></tr>
+        <tr>
+          <td>Modal dialogs</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">Full: focus trap, inert, aria-hidden, Escape, stacking</span></td>
+          <td><span class="no">✗ No</span><span class="note">Build it yourself with x-show / x-data</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span><span class="note">stimulus-components/modal available separately</span></td>
+        </tr>
+        <tr>
+          <td>Disclosure / toggle</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-click="toggle" — aria-expanded managed</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">x-show + @click</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Via class-toggle, no ARIA management</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Write a controller for it</span></td>
+        </tr>
+        <tr>
+          <td>Tabs / accordions</td>
+          <td class="brio-col"><span class="no">✗ No</span><span class="note">Planned / backlog</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Build with x-data — common, but manual</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">stimulus-components/tabs available</span></td>
+        </tr>
+        <tr>
+          <td>Inline feedback messages</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">showMessage(), readServerMessages(), aria-live wired</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Form locking on submit</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">Automatic on every submit, auto-reversed on server error</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+
+        <tr class="row-group"><td colspan="5">Dynamic content</td></tr>
+        <tr>
+          <td>Conditional show / hide</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-show-when, data-hide-when — full AND / OR syntax</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">x-show / x-if</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Server-side only; class-toggle for simple cases</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Via controller logic</span></td>
+        </tr>
+        <tr>
+          <td>Conditional enable / disable</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-enable-when, data-disable-when</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">:disabled="condition" — reactive, more verbose</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Via controller logic</span></td>
+        </tr>
+        <tr>
+          <td>Dynamic text / templates</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-bind with #id, dot.notation, {{template}} syntax</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">x-text — reactive, full JS expression</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">target.textContent = value in controller</span></td>
+        </tr>
+        <tr>
+          <td>Loop / list rendering</td>
+          <td class="brio-col"><span class="no">✗ No</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">x-for — native reactive loops</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Server renders the list; HTMX patches it in</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+
+        <tr class="row-group"><td colspan="5">Forms & data</td></tr>
+        <tr>
+          <td>Server response contract (JSON → messages)</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">readServerMessages() — structured field routing</span></td>
+          <td><span class="no">✗ No</span><span class="note">Handle in JS yourself</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Server sends HTML, not JSON</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Client-side validation</td>
+          <td class="brio-col"><span class="no">✗ No</span><span class="note">Planned / backlog</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Build with x-data and event handlers</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Build in controller</span></td>
+        </tr>
+        <tr>
+          <td>GET / fetch data helper</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">getData() with Bearer auth</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Use $fetch / plain fetch in expressions</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">Core purpose — all HTTP verbs</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>POST / send data helper</td>
+          <td class="brio-col"><span class="no">✗ No</span><span class="note">Planned / backlog</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Write fetch manually in expressions</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">hx-post — core feature</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+
+        <tr class="row-group"><td colspan="5">Accessibility</td></tr>
+        <tr>
+          <td>ARIA managed automatically</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">aria-expanded (toggle), aria-describedby (messages), aria-hidden + inert (dialogs)</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">:aria-expanded available but manual; no built-in patterns</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Focus management (dialogs)</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">Trap on open, restore to opener on close</span></td>
+          <td><span class="no">✗ No</span><span class="note">Must implement manually or use a plugin</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+        <tr>
+          <td>Live region announcements</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">Errors as role="alert", others as aria-live="polite"</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+          <td><span class="no">✗ No</span></td>
+        </tr>
+
+        <tr class="row-group"><td colspan="5">Developer experience</td></tr>
+        <tr>
+          <td>Logic in HTML vs separate JS file</td>
+          <td class="brio-col"><span class="yes">✓ Clean split</span><span class="note">HTML declares what; project.js defines how</span></td>
+          <td><span class="part">◐ Mixed</span><span class="note">JS expressions live in HTML attributes — can get complex</span></td>
+          <td><span class="yes">✓ Clean split</span><span class="note">HTML attributes, server handles logic</span></td>
+          <td><span class="yes">✓ Clean split</span><span class="note">Controllers in separate files</span></td>
+        </tr>
+        <tr>
+          <td>Readable HTML markup</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span><span class="note">data-click="openDialog(confirm)" is self-documenting</span></td>
+          <td><span class="part">◐ Mixed</span><span class="note">Simple cases clean; complex x-data gets messy</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">hx-post="/api/item" is self-documenting</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">data-controller="dropdown" is clear</span></td>
+        </tr>
+        <tr>
+          <td>Works with any backend</td>
+          <td class="brio-col"><span class="yes">✓ Yes</span></td>
+          <td><span class="yes">✓ Yes</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">Backend must return HTML fragments, not JSON</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">Built for Rails but works anywhere</span></td>
+        </tr>
+        <tr>
+          <td>Debug / dev mode</td>
+          <td class="brio-col"><span class="no">✗ No</span><span class="note">Planned / backlog</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">Alpine.js DevTools browser extension</span></td>
+          <td><span class="part">◐ Partly</span><span class="note">htmx:configRequest / logging events</span></td>
+          <td><span class="yes">✓ Yes</span><span class="note">Stimulus.debug = true</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- ── Per-framework verdicts ──────────────────────────────────── -->
+
+  <h2>What each does best — and worst</h2>
+
+  <div class="verdicts">
+
+    <div class="verdict">
+      <div class="verdict-name">Alpine.js</div>
+      <h3>Best at: reactivity</h3>
+      <p>If your UI needs to respond to changing state — counters, live filtering, complex conditional rendering — Alpine is the clearest tool. x-data gives you a reactive scope in a single attribute, and the DOM updates automatically. Nothing else in this group matches it for client-side state management.</p>
+      <ul>
+        <li>Full reactive data binding</li>
+        <li>x-for loops, x-if rendering</li>
+        <li>DevTools extension for debugging</li>
+        <li>Huge community, lots of examples</li>
+      </ul>
+      <p style="margin-top:0.75rem"><strong style="color:var(--red)">Weakness:</strong> JS logic bleeds into HTML attributes. Complex x-data expressions become hard to read and test. No built-in dialog, feedback, or form patterns — every project rebuilds them.</p>
+    </div>
+
+    <div class="verdict">
+      <div class="verdict-name">HTMX</div>
+      <h3>Best at: server-driven updates</h3>
+      <p>When your app is primarily server-rendered and you want partial page updates without a full reload, HTMX is unmatched. It turns any element into an AJAX trigger with a single attribute. The server stays in control of state and rendering — the frontend just receives HTML patches.</p>
+      <ul>
+        <li>All HTTP verbs from HTML attributes</li>
+        <li>Partial page swaps, out-of-band updates</li>
+        <li>WebSocket / SSE support built in</li>
+        <li>Perfect for Laravel, Django, Rails</li>
+      </ul>
+      <p style="margin-top:0.75rem"><strong style="color:var(--red)">Weakness:</strong> Useless without a backend that serves HTML fragments. No client-side state at all. Complex UI interactions (modals, validation, tabs) require Alpine or vanilla JS alongside it.</p>
+    </div>
+
+    <div class="verdict">
+      <div class="verdict-name">Stimulus</div>
+      <h3>Best at: structured JS</h3>
+      <p>For teams who want JavaScript organised properly — separated into named controller files, following conventions — Stimulus is the most maintainable option. It scales better than Alpine for large codebases and avoids JS-in-attributes entirely.</p>
+      <ul>
+        <li>Cleanest separation of HTML and JS</li>
+        <li>Lifecycle hooks (connect, disconnect)</li>
+        <li>stimulus-components ecosystem</li>
+        <li>First-class Rails/Hotwire integration</li>
+      </ul>
+      <p style="margin-top:0.75rem"><strong style="color:var(--red)">Weakness:</strong> Requires a build step. Overkill for simple sites. No built-in UI patterns — you either write controllers yourself or depend on third-party packages. Not great for no-build environments.</p>
+    </div>
+
+    <div class="verdict">
+      <div class="verdict-name">Brio</div>
+      <h3>Best at: complete client patterns</h3>
+      <p>Brio is the only framework in this group that ships opinionated, accessible solutions for dialogs, form feedback, and conditional fields out of the box. The HTML stays readable; the JS stays in one file; accessibility is handled for you. For content sites and product UIs built without a framework, it covers more ground per line of HTML than any alternative.</p>
+      <ul>
+        <li>Accessible dialogs with zero extra code</li>
+        <li>Form feedback wired to server responses</li>
+        <li>Keyboard chords, URL triggers</li>
+        <li>ARIA managed automatically throughout</li>
+        <li>Truly zero config — drop in and go</li>
+      </ul>
+      <p style="margin-top:0.75rem"><strong style="color:var(--red)">Weakness:</strong> No reactivity — not the right tool when state changes drive UI updates. Missing tabs, accordions, client-side validation. Smaller community, less documentation than the others.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ── Positioning ─────────────────────────────────────────────── -->
+
+  <h2>Positioning</h2>
+
+  <div class="positioning">
+    <div class="pos-block">
+      <h3>Alpine.js is your closest comparison</h3>
+      <p>People will put Brio next to Alpine most often, because both use data-attributes and both require no build step. The key difference is philosophical: Alpine embeds JavaScript inside HTML attributes (reactive expressions, loops, conditionals). Brio keeps HTML declarative and JavaScript in a separate file — it never asks you to write <code style="font-family:monospace;font-size:0.8em;color:var(--accent)">x-data="{ open: false }"</code>.</p>
+      <p>Alpine wins on flexibility and raw power. Brio wins on readability, accessibility out-of-the-box, and the fact that your HTML never becomes a JS template.</p>
+    </div>
+    <div class="pos-block">
+      <h3>HTMX and Stimulus are different audiences</h3>
+      <p>HTMX targets backend developers who want to keep state on the server. Brio targets frontend developers building client-side behaviour on top of existing HTML. They're not really competing.</p>
+      <p>Stimulus is closer in spirit — data-attributes wiring to JS — but it requires a build step and expects you to write controller classes. Brio is simpler: any function in <code style="font-family:monospace;font-size:0.8em;color:var(--accent)">project.js</code> just works.</p>
+    </div>
+    <div class="pos-block highlight">
+      <h3>Brio's real opening</h3>
+      <p>None of the other frameworks ship accessible dialogs, form feedback with server response routing, or automatic ARIA management. Every Alpine/Stimulus/HTMX project that needs a modal either writes it from scratch or reaches for a third-party package.</p>
+      <p>That's the gap Brio fills. Not "another reactive framework" — but a <strong>thin, complete behaviour layer</strong> for the patterns you write on every project, with accessibility handled correctly from day one.</p>
+    </div>
+    <div class="pos-block">
+      <h3>The message in one sentence</h3>
+      <p style="font-size:1rem;color:var(--text);font-style:italic;line-height:1.6;">"Brio is a no-build behaviour layer for multi-page sites — dialogs, forms, keyboard, and conditional UI, all declarative, all accessible, zero dependencies."</p>
+      <p style="margin-top:0.75rem">That's what none of the others say. Alpine says "reactive". HTMX says "server HTML". Stimulus says "organised JS". Brio's space is <em>complete patterns, no overhead</em>.</p>
+    </div>
+  </div>
+
+
+  <!-- ── Closing callout ─────────────────────────────────────────── -->
+
+  <div class="callout">
+    <strong>Where to focus next.</strong> The two gaps that most weaken Brio's position against Alpine are <strong>tabs/accordions</strong> (every project needs them, Alpine handles them easily) and <strong>client-side validation</strong> (Alpine makes it straightforward; Brio currently makes you write it yourself). Closing those two would make the "why not just use Alpine" question much harder to answer.
+  </div>
+
+</div>
+
+</body>
+</html>

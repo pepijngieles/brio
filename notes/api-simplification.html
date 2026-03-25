@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brio — API Simplification</title>
+  <style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0f0f0f;
+      --surface:    #1a1a1a;
+      --surface-2:  #1f1f1f;
+      --border:     #2a2a2a;
+      --text:       #e8e4dc;
+      --muted:      #7a7570;
+      --accent:     #c8b89a;
+      --accent-dim: #9a8a76;
+      --green:      #70b88a;
+      --red:        #e07878;
+      --yellow:     #c8a870;
+      --radius:     5px;
+      font-size: 15px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      line-height: 1.7;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      height: 52px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 clamp(1.25rem, 5vw, 3.5rem);
+      gap: 0.75rem;
+      z-index: 10;
+    }
+
+    .topbar-title {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .topbar-sub {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 5vw, 3.5rem) 6rem;
+    }
+
+    .eyebrow {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.4rem;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: normal;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .lead {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 620px;
+      margin-bottom: 3.5rem;
+      line-height: 1.7;
+    }
+
+    /* ── Section ── */
+
+    .section {
+      margin-bottom: 3.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-num {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: normal;
+      color: var(--text);
+      flex: 1;
+    }
+
+    h2::after {
+      content: '';
+      display: inline-block;
+      width: 100%;
+    }
+
+    .tag {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .tag-confirmed { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
+    .tag-discuss   { background: color-mix(in srgb, var(--yellow) 15%, transparent); color: var(--yellow); }
+
+    /* ── Diff block ── */
+
+    .diff {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+    }
+
+    .diff-label {
+      background: var(--surface-2);
+      padding: 0.4rem 0.85rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .diff-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .diff-row:last-child { border-bottom: none; }
+
+    .diff-sign {
+      width: 28px;
+      flex-shrink: 0;
+      padding: 0.55rem 0 0.55rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    .diff-code {
+      padding: 0.55rem 0.75rem 0.55rem 0;
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .diff-row.before { background: color-mix(in srgb, var(--red) 6%, transparent); }
+    .diff-row.after  { background: color-mix(in srgb, var(--green) 6%, transparent); }
+    .diff-row.before .diff-sign { color: var(--red); }
+    .diff-row.after  .diff-sign { color: var(--green); }
+    .diff-row.before .diff-code { color: color-mix(in srgb, var(--red) 80%, var(--text)); }
+    .diff-row.after  .diff-code { color: color-mix(in srgb, var(--green) 80%, var(--text)); }
+
+    /* ── Prose ── */
+
+    .why {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 0.75rem;
+    }
+
+    .why strong { color: var(--text); }
+    .why code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      color: var(--accent);
+      background: var(--surface);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    .impact {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .impact-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .impact-dot.high   { background: var(--green); }
+    .impact-dot.medium { background: var(--yellow); }
+    .impact-dot.low    { background: var(--muted); }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2.5rem 0;
+    }
+
+    /* ── Summary table ── */
+
+    .summary {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 3.5rem;
+    }
+
+    .summary table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .summary thead tr { background: var(--surface-2); }
+
+    .summary th {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+    }
+
+    .summary td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--muted);
+    }
+
+    .summary tr:last-child td { border-bottom: none; }
+    .summary td:first-child { color: var(--text); width: 160px; }
+    .summary td code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      color: var(--accent);
+      background: var(--surface-2);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    .summary tr:hover td { background: var(--surface); }
+
+    .badge {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+    }
+
+    .badge-remove  { background: color-mix(in srgb, var(--red) 15%, transparent);    color: var(--red); }
+    .badge-rename  { background: color-mix(in srgb, var(--yellow) 15%, transparent); color: var(--yellow); }
+    .badge-combine { background: color-mix(in srgb, var(--green) 15%, transparent);  color: var(--green); }
+    .badge-auto    { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="topbar-title">Brio</span>
+  <span class="topbar-sub">— API simplification</span>
+</header>
+
+<div class="page">
+
+  <div class="eyebrow">Developer experience</div>
+  <h1>Reducing boilerplate in the HTML API</h1>
+  <p class="lead">Six concrete opportunities — some confirmed wins, some worth a discussion. Each reduces the number of things a developer has to remember or write to get correct behaviour.</p>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- 1. data-message + data-for                                          -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>Combine <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">data-message</code> + <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">data-for</code></h2>
+      <span class="tag tag-confirmed">Confirmed win</span>
+    </div>
+
+    <div class="impact"><span class="impact-dot high"></span> High — affects every form in every project</div>
+
+    <p class="why">Your observation is correct. <code>data-message</code> is a valueless marker — it never holds a value. When it appears alongside <code>data-for</code>, both attributes together say "this is the message region for field X." Collapsing them into a single attribute is strictly cleaner and still leaves the form-level pattern (<code>data-message</code> alone) untouched.</p>
+
+    <div class="diff">
+      <div class="diff-label">Field-level message region</div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">&lt;span data-message data-for="email" hidden&gt;&lt;/span&gt;</span>
+      </div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;span data-message-for="email" hidden&gt;&lt;/span&gt;</span>
+      </div>
+    </div>
+
+    <div class="diff">
+      <div class="diff-label">Form-level message region — unchanged</div>
+      <div class="diff-row after">
+        <span class="diff-sign"> </span>
+        <span class="diff-code">&lt;div data-message hidden&gt;&lt;/div&gt;</span>
+      </div>
+    </div>
+
+    <p class="why">The JS change is small: <code>resolveMessageRegion</code> needs to query <code>[data-message-for="id"]</code> instead of <code>[data-message][data-for="id"]</code>, and <code>clearMessages</code> needs to select both <code>[data-message]</code> and <code>[data-message-for]</code>.</p>
+  </div>
+
+  <div class="divider"></div>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- 2. Remove data-el="close-button"                                    -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>Remove <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">data-el="close-button"</code> entirely</h2>
+      <span class="tag tag-confirmed">Confirmed win</span>
+    </div>
+
+    <div class="impact"><span class="impact-dot high"></span> High — every dialog has one, developers currently need both attributes</div>
+
+    <p class="why">Close buttons currently require two attributes: <code>data-click="closeDialog"</code> (to trigger close) and <code>data-el="close-button"</code> (so the framework knows whether Escape and dim-click should close the dialog). These two always appear on the same element and always mean the same thing. The framework can infer the second from the first — if there's an enabled <code>data-click="closeDialog"</code> button in the dialog, that IS the close button.</p>
+
+    <div class="diff">
+      <div class="diff-label">Close button</div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">&lt;button data-click="closeDialog" data-el="close-button"&gt;Close&lt;/button&gt;</span>
+      </div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;button data-click="closeDialog"&gt;Close&lt;/button&gt;</span>
+      </div>
+    </div>
+
+    <p class="why">The JS change is a one-line selector swap: replace <code>[data-el=close-button]:not([disabled])</code> with <code>[data-click="closeDialog"]:not([disabled])</code> in the two places it's checked (Escape handler and <code>clickDimLayer</code>). Also replace the same selector in <code>autoFocus</code>, which currently skips the close button when looking for the first focusable element.</p>
+  </div>
+
+  <div class="divider"></div>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- 3. Native <dialog> contract                                           -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>Native <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">&lt;dialog&gt;</code> + <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">aria-labelledby</code> by default</h2>
+      <span class="tag tag-confirmed">Confirmed win</span>
+    </div>
+
+    <div class="impact"><span class="impact-dot high"></span> High — every dialog, removes two attributes and one manual step</div>
+
+    <p class="why">Everything inside the dialog portal <em>is</em> a dialog — the framework already knows this. And <code>addDialogTitleIds()</code> already finds the <code>&lt;h2&gt;</code> inside each dialog and assigns it an id like <code>settings-title</code>, but then stops. The developer still has to go back to the dialog element and manually write <code>aria-labelledby="settings-title"</code>. The function already has everything it needs to do this step automatically.</p>
+
+    <div class="diff">
+      <div class="diff-label">Before — developer writes</div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">&lt;dialog id="settings"
+        aria-labelledby="settings-title"&gt;</span>
+      </div>
+    </div>
+
+    <div class="diff">
+      <div class="diff-label">After — developer writes</div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;dialog id="settings"&gt;</span>
+      </div>
+    </div>
+
+    <p class="why">Current direction: use native <code>&lt;dialog&gt;</code> directly and keep <code>addDialogTitleIds()</code> focused on assigning heading ids/labels when missing. No portal role injection needed.</p>
+  </div>
+
+  <div class="divider"></div>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- 4. Rename data-el → data-brio                                        -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>Keep framework hooks namespaced (<code style="font-family:monospace;font-size:0.85em;color:var(--accent)">data-brio</code>)</h2>
+      <span class="tag tag-confirmed">Confirmed win</span>
+    </div>
+
+    <div class="impact"><span class="impact-dot medium"></span> Medium — clarity and safety, low effort</div>
+
+    <p class="why">Framework hook attributes should stay explicitly namespaced. <code>data-brio</code> is clear, unambiguous, and avoids collisions with other tooling conventions.</p>
+
+    <div class="diff">
+      <div class="diff-label">Naming direction</div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">&lt;div data-el="page-content"&gt;</span>
+      </div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">&lt;div data-el="dialog-portal"&gt;</span>
+      </div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">&lt;div data-el="dim-layer" data-click="clickDimLayer"&gt;</span>
+      </div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;div data-brio="page-content"&gt;</span>
+      </div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;div data-brio="dialog-portal"&gt;</span>
+      </div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;div data-brio="dim-layer" data-click="clickDimLayer"&gt;</span>
+      </div>
+    </div>
+
+    <p class="why">This is a naming-level choice for internal hooks. It does not change the dialog API for consumers.</p>
+  </div>
+
+  <div class="divider"></div>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- 5. Native backdrop policy                                            -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>Native backdrop policy for <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">&lt;dialog&gt;</code></h2>
+      <span class="tag tag-confirmed">Current behavior</span>
+    </div>
+
+    <div class="impact"><span class="impact-dot medium"></span> Medium — removes custom overlay wiring and keeps behavior explicit</div>
+
+    <p class="why">In the native <code>&lt;dialog&gt;</code> model there is no separate dim-layer element to wire. Backdrop behavior comes from native dialog mechanics plus Brio's dismissal policy.</p>
+
+    <div class="diff">
+      <div class="diff-label">Dismiss behavior</div>
+      <div class="diff-row before">
+        <span class="diff-sign">−</span>
+        <span class="diff-code">Custom dim-layer click handling in HTML</span>
+      </div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">Native <code>&lt;dialog&gt;</code> backdrop + Brio dismiss policy</span>
+      </div>
+    </div>
+
+    <p class="why">The practical result is less boilerplate and fewer integration mistakes, while retaining policy control through the close-button rule.</p>
+  </div>
+
+  <div class="divider"></div>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- 6. data-reopen="false"                                              -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>Keep <code style="font-family:monospace;font-size:0.85em;color:var(--accent)">data-reopen="false"</code> for stacked-dialog opt-out</h2>
+      <span class="tag tag-confirmed">Confirmed win</span>
+    </div>
+
+    <div class="impact"><span class="impact-dot low"></span> Low — niche, but clear in intent</div>
+
+    <p class="why">In the current native dialog implementation, Brio keeps <code>data-reopen="false"</code> as the explicit opt-out for reopen behavior when stacked dialogs are used.</p>
+
+    <div class="diff">
+      <div class="diff-label">Dialog that should not reopen after a sub-dialog closes</div>
+      <div class="diff-row after">
+        <span class="diff-sign">+</span>
+        <span class="diff-code">&lt;dialog id="settings" data-reopen="false"&gt;</span>
+      </div>
+    </div>
+
+    <p class="why">JS behavior: reopen is disabled when <code>data-reopen="false"</code> is present.</p>
+  </div>
+
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <!-- Summary                                                             -->
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+
+  <div class="summary">
+    <table>
+      <thead>
+        <tr>
+          <th>Change</th>
+          <th>Type</th>
+          <th>Before</th>
+          <th>After</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Field message</td>
+          <td><span class="badge badge-combine">Combine</span></td>
+          <td><code>data-message data-for="x"</code></td>
+          <td><code>data-message-for="x"</code></td>
+        </tr>
+        <tr>
+          <td>Close button marker</td>
+          <td><span class="badge badge-remove">Remove</span></td>
+          <td><code>data-el="close-button"</code></td>
+          <td>Inferred from <code>data-click="closeDialog"</code></td>
+        </tr>
+        <tr>
+          <td>Dialog role + label</td>
+          <td><span class="badge badge-auto">Auto</span></td>
+          <td><code>&lt;dialog id="x" aria-labelledby="x-title"&gt;</code></td>
+          <td>Native markup + optional heading id helper</td>
+        </tr>
+        <tr>
+          <td>Framework hook attribute</td>
+          <td><span class="badge badge-rename">Rename</span></td>
+          <td><code>data-el="..."</code></td>
+          <td><code>data-brio="..."</code></td>
+        </tr>
+        <tr>
+          <td>Backdrop dismiss</td>
+          <td><span class="badge badge-auto">Auto</span></td>
+          <td>Custom dim-layer click handling</td>
+          <td>Native backdrop + Brio policy</td>
+        </tr>
+        <tr>
+          <td>Reopen opt-out</td>
+          <td><span class="badge badge-auto">Keep</span></td>
+          <td><code>data-reopen="false"</code></td>
+          <td><code>data-reopen="false"</code> (unchanged)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="font-size:0.8rem;color:var(--muted);margin-top:2rem;line-height:1.6">All changes except #5 are non-breaking relative to each other and can be applied in one pass. If any existing project code has been written against these APIs, a migration note in BACKLOG.md is recommended.</p>
+
+</div>
+
+</body>
+</html>

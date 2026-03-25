@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brio — Reference</title>
+  <link rel="stylesheet" href="../dist/brio.css">
+  <style>
+
+    /* ── Reset & tokens ─────────────────────────────────────────────────── */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0f0f0f;
+      --surface:      #1a1a1a;
+      --border:       #2a2a2a;
+      --border-hover: #3a3a3a;
+      --text:         #e8e4dc;
+      --muted:        #7a7570;
+      --accent:       #c8b89a;
+      --accent-dim:   #9a8a76;
+      --green:        #70b88a;
+      --red:          #e07878;
+      --blue:         #70a0c8;
+      --yellow:       #c8a870;
+      --radius:       5px;
+      --sidebar-w:    240px;
+      --header-h:     0px;
+
+      /* Fluid spacing — scales smoothly from 360 px → 1200 px viewport */
+      --px:    clamp(1rem,   4vw,  3.5rem);   /* content horizontal pad */
+      --pt:    clamp(1.5rem, 4vw,  3rem);     /* content top pad */
+      --pb:    clamp(3rem,   6vw,  6rem);     /* content bottom pad */
+
+      font-size: 15px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      line-height: 1.7;
+      /* prevent body scroll when mobile drawer is open */
+    }
+
+    body.drawer-open { overflow: hidden; }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       TOP BAR
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem 0 1.25rem;
+      gap: 0.75rem;
+      z-index: 200;
+    }
+
+    .topbar-mobile { display: none; }
+
+    /* Hamburger — only visible on mobile */
+    .menu-btn {
+      display: none;
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: border-color 0.15s, color 0.15s;
+      padding: 0;
+    }
+
+    .menu-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .menu-btn svg { display: block; }
+
+    .topbar-title {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .topbar-version {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.1em 0.5em;
+      border-radius: var(--radius);
+    }
+
+    .topbar-files {
+      margin-left: auto;
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .file-tag {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.15em 0.5em;
+      border-radius: var(--radius);
+    }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       SHELL — sidebar + content grid
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      min-height: 100vh;
+      padding-top: var(--header-h);
+    }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      padding: 1.25rem 0 2rem;
+      display: flex;
+      flex-direction: column;
+      z-index: 150;
+      background: var(--bg);
+      /* smooth show/hide transition shared by desktop narrow and mobile drawer */
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Close button inside drawer — hidden on desktop */
+    .drawer-close {
+      display: none;
+      align-self: flex-end;
+      margin: 0 0.75rem 0.5rem;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: var(--muted);
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .drawer-close:hover { border-color: var(--border-hover); color: var(--text); }
+    .drawer-close svg { display: block; }
+
+    .search-wrap {
+      padding: 0 1rem 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+
+    .search {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.45rem 0.65rem;
+      transition: border-color 0.15s;
+    }
+
+    .search:focus { outline: none; border-color: var(--accent-dim); }
+    .search::placeholder { color: var(--muted); }
+
+    .nav-group { margin-bottom: 0.25rem; }
+
+    .nav-group-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.5rem 1rem 0.25rem;
+      display: block;
+    }
+
+    .sidebar.search-active .nav-group-label { display: none; }
+
+    .nav-link {
+      display: block;
+      font-size: 0.825rem;
+      color: var(--muted);
+      text-decoration: none;
+      /* tall tap targets on touch */
+      padding: 0.45rem 1rem 0.45rem 1.25rem;
+      border-left: 2px solid transparent;
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+      line-height: 1.4;
+    }
+
+    .nav-link:hover  { color: var(--text); background: var(--surface); }
+
+    .nav-link.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+    }
+
+    .nav-link[hidden] { display: none; }
+
+    .sidebar-title {
+      display: block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 1rem 1.25rem 0.75rem;
+      margin-bottom: 0.5rem;
+      transition: color 0.15s;
+    }
+
+    .sidebar-title:hover { color: var(--text); }
+
+    .no-results {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 0.5rem 1rem;
+      display: none;
+    }
+
+    /* Dim overlay — sits between page and open drawer on mobile */
+    .drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 140;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .drawer-overlay.visible {
+      opacity: 1;
+    }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       CONTENT
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .content {
+      grid-column: 2;
+      padding: var(--pt) var(--px) var(--pb);
+      max-width: 860px;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       SECTIONS
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .section {
+      padding-top: 1px;
+      margin-bottom: 4.5rem;
+    }
+
+    .section-anchor {
+      display: block;
+      position: relative;
+      top: calc(-1 * var(--header-h) - 1.5rem);
+      visibility: hidden;
+    }
+
+    .section-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.4rem;
+    }
+
+    .section > h2 {
+      font-size: clamp(1.15rem, 3.5vw, 1.4rem);
+      font-weight: normal;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section > p,
+    .section > .intro {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      max-width: 620px;
+    }
+
+    .subsection { margin-bottom: 2.5rem; }
+
+    .subsection h3 {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      font-weight: normal;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .subsection h3::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    p { margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--muted); }
+    p:last-child { margin-bottom: 0; }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       CODE
+    ══════════════════════════════════════════════════════════════════════ */
+
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      color: var(--accent);
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0.75rem 0 1.25rem;
+      /* enable momentum scrolling on iOS */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: clamp(0.72rem, 2vw, 0.8rem);
+      color: var(--text);
+      line-height: 1.65;
+      white-space: pre;
+    }
+
+    /* syntax tints */
+    .t-attr { color: var(--blue); }
+    .t-val  { color: var(--green); }
+    .t-tag  { color: var(--muted); }
+    .t-key  { color: var(--accent); }
+    .t-cmt  { color: #555; font-style: italic; }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       TABLES  — wrapped for horizontal scroll on small screens
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0.5rem 0 1.25rem;
+      /* subtle fade hint on the right edge when overflowing */
+      background:
+        linear-gradient(to right, var(--bg) 0%, transparent 3%) left,
+        linear-gradient(to left,  var(--bg) 0%, transparent 3%) right;
+      background-size: 40px 100%;
+      background-repeat: no-repeat;
+      background-attachment: local, local;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      /* min-width keeps columns readable; scroll kicks in before they crush */
+      min-width: 480px;
+    }
+
+    th {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    td:first-child {
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface); }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       CALLOUTS
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .callout {
+      border-left: 3px solid var(--border-hover);
+      background: var(--surface);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.85rem 1.1rem;
+      margin: 0.75rem 0 1.25rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .callout.info { border-left-color: var(--blue); }
+    .callout.warn { border-left-color: var(--yellow); }
+    .callout.good { border-left-color: var(--green); }
+    .callout strong { color: var(--text); }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       BADGES
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .badge {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      padding: 0.15em 0.5em;
+      border-radius: 99px;
+      border: 1px solid currentColor;
+      vertical-align: middle;
+      margin-left: 0.4rem;
+    }
+
+    .badge.auto   { color: var(--green); }
+    .badge.manual { color: var(--accent-dim); }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       BREAKPOINTS
+    ══════════════════════════════════════════════════════════════════════ */
+
+    /* ── Tablet: narrow sidebar ──────────────────────────────────────────── */
+    @media (max-width: 1060px) {
+      :root { --sidebar-w: 200px; }
+      .topbar-files { display: none; }
+    }
+
+    /* ── Mobile: slide-in drawer ─────────────────────────────────────────── */
+    @media (max-width: 720px) {
+      :root { --sidebar-w: 280px; --header-h: 48px; }
+      .topbar-mobile { display: flex; }
+
+      .menu-btn { display: flex; }
+
+      .shell { grid-template-columns: 1fr; }
+
+      .content {
+        grid-column: 1;
+        max-width: none;
+      }
+
+      .sidebar {
+        top: 0;
+        height: 100vh;
+        transform: translateX(calc(-1 * var(--sidebar-w) - 1px));
+        border-right: 1px solid var(--border);
+        padding-top: 0.75rem;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+      }
+
+      .sidebar.open { transform: translateX(0); }
+
+      .drawer-close { display: flex; }
+      .drawer-overlay { display: block; }
+
+      .nav-link { padding: 0.6rem 1rem 0.6rem 1.25rem; font-size: 0.9rem; }
+    }
+
+    /* ── Narrow: stack table rows as cards ───────────────────────────────── */
+    @media (max-width: 540px) {
+
+      /* Override the table-wrap scroll — not needed once rows stack */
+      .table-wrap {
+        overflow-x: visible;
+        background: none;
+      }
+
+      table   { min-width: 0; width: 100%; }
+      thead   { display: none; } /* labels come from td:first-child instead */
+      tbody   { display: block; }
+
+      tr {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.75rem 0.875rem;
+        margin-bottom: 0.6rem;
+        background: var(--surface);
+      }
+
+      tr:hover { background: var(--surface); } /* reset hover on row */
+
+      td {
+        display: block;
+        border: none;
+        padding: 0;
+        white-space: normal;
+        font-size: 0.85rem;
+      }
+
+      /* First cell = the "key" — rendered as a label */
+      td:first-child {
+        font-family: 'Courier New', monospace;
+        font-size: 0.78rem;
+        color: var(--accent);
+        white-space: normal;
+        padding-bottom: 0.4rem;
+        margin-bottom: 0.35rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      /* Second cell = description — slightly muted */
+      td + td { color: var(--muted); line-height: 1.55; }
+
+      /* Three-column tables: third cell gets a little top space */
+      td + td + td { margin-top: 0.3rem; }
+    }
+
+    /* ── Very small ──────────────────────────────────────────────────────── */
+    @media (max-width: 400px) {
+      .topbar-title { font-size: 0.75rem; }
+    }
+
+    /* ── Motion preference ───────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar, .drawer-overlay { transition: none; }
+    }
+
+
+    /* ══════════════════════════════════════════════════════════════════════
+       LIVE DEMOS (Brio-powered)
+    ══════════════════════════════════════════════════════════════════════ */
+
+    .demo-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .demo-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0 1.25rem;
+    }
+
+    .demo-block .button-group { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .demo-block button {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .demo-block button:hover { border-color: var(--accent-dim); }
+    .demo-block .field { display: grid; margin-bottom: 0.75rem; }
+    .demo-block .field:last-child { margin-bottom: 0; }
+    .demo-block label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; font-family: 'Courier New', monospace; }
+    .demo-block input, .demo-block select, .demo-block textarea {
+      padding: 0.5rem 0.65rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .demo-block [data-message] {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius);
+      border-left: 3px solid currentColor;
+      margin-top: 0.4rem;
+    }
+    .demo-block [data-message][data-type=error]   { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+    .demo-block [data-message][data-type=success] { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); }
+    .demo-block [data-message][data-type=warning] { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 12%, transparent); }
+    /* Demo dialog */
+    dialog.demo-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) * 2);
+      width: min(400px, calc(100vw - 2rem));
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      color: var(--text);
+    }
+    dialog.demo-dialog h2 { font-size: 1rem; margin: 0 0 1rem 0; padding: 0; border: none; }
+    dialog.demo-dialog .dialog-actions { display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end; }
+    dialog.demo-dialog button { padding: 0.5rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.85rem; cursor: pointer; }
+
+  </style>
+</head>
+<body>
+
+<!-- ── Dim overlay for mobile drawer ──────────────────────────────────── -->
+<div class="drawer-overlay" id="drawer-overlay" aria-hidden="true"></div>
+
+
+<!-- ── Mobile only: bar with menu button ─────────────────────────────── -->
+<header class="topbar topbar-mobile">
+  <button class="menu-btn" id="menu-btn" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2" y="4"  width="12" height="1.5" rx="0.75" fill="currentColor"/>
+      <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+      <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+    </svg>
+  </button>
+  <span class="topbar-title">Brio [v1]</span>
+</header>
+
+
+<div data-el="page-content">
+<div class="shell">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+
+    <a href="index.html" class="sidebar-title">Brio [v1]</a>
+
+    <button class="drawer-close" id="drawer-close" aria-label="Close navigation">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="search-wrap">
+      <input class="search" type="search" placeholder="Search…" aria-label="Search sections" id="nav-search">
+    </div>
+
+    <span class="no-results" id="no-results">No matches</span>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Overview</span>
+      <a class="nav-link" href="#getting-started">Getting started</a>
+      <a class="nav-link" href="#load-order">Load order</a>
+      <a class="nav-link" href="#replaces">What it replaces</a>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Core</span>
+      <a class="nav-link" href="#binding-actions">Binding actions</a>
+      <a class="nav-link" href="#keyboard">Keyboard shortcuts</a>
+      <a class="nav-link" href="#url-trigger">URL trigger</a>
+      <a class="nav-link" href="#builtin-actions">Built-in actions</a>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Components</span>
+      <a class="nav-link" href="#dialogs">Dialogs</a>
+      <a class="nav-link" href="#feedback">Feedback &amp; forms</a>
+      <a class="nav-link" href="#dynamic-fields">Dynamic fields</a>
+      <a class="nav-link" href="#dynamic-text">Dynamic text</a>
+      <a class="nav-link" href="#disclosure">Disclosure toggle</a>
+    </div>
+
+    <div class="nav-group">
+      <span class="nav-group-label">Reference</span>
+      <a class="nav-link" href="#writing-actions">Writing action functions</a>
+      <a class="nav-link" href="#utils-dom">Utils — DOM</a>
+      <a class="nav-link" href="#utils-network">Utils — Network &amp; storage</a>
+      <a class="nav-link" href="#utils-timing">Utils — Timing</a>
+      <a class="nav-link" href="#utils-other">Utils — Other</a>
+      <a class="nav-link" href="#accessibility">Accessibility</a>
+    </div>
+
+  </nav>
+
+
+  <!-- ── Content ──────────────────────────────────────────────────────── -->
+
+  <main class="content">
+
+
+    <!-- ═══════════════════════════════ GETTING STARTED ════════════════ -->
+
+    <div class="section" id="getting-started">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Overview</div>
+      <h2>Getting started</h2>
+      <p class="intro">A lightweight, declarative framework for multi-page sites and web apps. HTML declares <em>what</em> happens; JavaScript defines <em>how</em>. No build step, no dependencies.</p>
+
+      <div class="subsection">
+        <h3>Mental model</h3>
+        <p>Behaviour is bound to HTML elements via <code>data-*</code> attributes. One event listener on <code>document</code> handles everything. When you scan the HTML, it is immediately clear which element does what — without hunting through JS files.</p>
+        <pre><code><span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"openDialog(confirm)"</span><span class="t-tag">&gt;</span>Delete<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"saveItem|closeDialog(confirm)"</span><span class="t-tag">&gt;</span>Confirm<span class="t-tag">&lt;/button&gt;</span></code></pre>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ LOAD ORDER ══════════════════════ -->
+
+    <div class="section" id="load-order">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Overview</div>
+      <h2>Load order</h2>
+      <p class="intro">All scripts require <code>defer</code> or placement before <code>&lt;/body&gt;</code>.</p>
+
+      <pre><code><span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"utils.js"</span>    <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"actions.js"</span>  <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"binding.js"</span>  <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"dialogs.js"</span>  <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"feedback.js"</span> <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"project.js"</span>  <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span></code></pre>
+
+      <p><code>project.js</code> must come last — it calls functions defined in the other files. The order of the four core files is otherwise flexible; each checks <code>typeof fn === 'function'</code> before calling across file boundaries.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Responsibility</th></tr></thead>
+          <tbody>
+            <tr><td>utils.js</td><td>DOM, string, number, URL, storage, date, network helpers + dynamic field conditions</td></tr>
+            <tr><td>actions.js</td><td>Event delegation — the core dispatcher</td></tr>
+            <tr><td>binding.js</td><td>Reactive state, data-bind/data-bind-*, no-refresh response patches</td></tr>
+            <tr><td>dialogs.js</td><td>Native dialog open/close, focus return, dismissal policy</td></tr>
+            <tr><td>feedback.js</td><td>Inline messages for client-side and server-side feedback</td></tr>
+            <tr><td>project.js</td><td>Your action functions</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ WHAT IT REPLACES ════════════════ -->
+
+    <div class="section" id="replaces">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Overview</div>
+      <h2>What it replaces</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Don't use</th><th>Use instead</th></tr></thead>
+          <tbody>
+            <tr><td>el.addEventListener('click', fn)</td><td><code>data-click="fnName"</code></td></tr>
+            <tr><td>onclick="..." inline handlers</td><td><code>data-click="fnName"</code></td></tr>
+            <tr><td>alert(), confirm(), prompt()</td><td>Modal dialog with <code>role="alertdialog"</code></td></tr>
+            <tr><td>Toast libraries, snackbars</td><td><code>showMessage()</code></td></tr>
+            <tr><td>jQuery or other DOM libraries</td><td>Not needed</td></tr>
+            <tr><td>Custom event binding per component</td><td><code>registerEvent()</code> for non-core types</td></tr>
+            <tr><td>Separate validation + feedback systems</td><td><code>showMessage()</code> / <code>readServerMessages()</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ BINDING ACTIONS ═════════════════ -->
+
+    <div class="section" id="binding-actions">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Core</div>
+      <h2>Binding actions</h2>
+      <p class="intro">Core event types <code>click</code>, <code>change</code>, <code>input</code>, <code>submit</code> are always registered. Additional types can be added with <code>registerEvent()</code>.</p>
+
+      <div class="subsection">
+        <h3>Syntax</h3>
+        <pre><code><span class="t-cmt">&lt;!-- Single action --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"myAction"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/button&gt;</span>
+
+<span class="t-cmt">&lt;!-- With a target argument --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"myAction(someId)"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/button&gt;</span>
+
+<span class="t-cmt">&lt;!-- Pipe-separated: runs both in order --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"saveItem|closeDialog(confirm)"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/button&gt;</span>
+
+<span class="t-cmt">&lt;!-- On change (select, checkbox, radio) --&gt;</span>
+<span class="t-tag">&lt;select</span> <span class="t-attr">data-change</span>=<span class="t-val">"myAction"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/select&gt;</span>
+
+<span class="t-cmt">&lt;!-- On input — fires on every keystroke (live search, counters) --&gt;</span>
+<span class="t-tag">&lt;input</span> <span class="t-attr">data-input</span>=<span class="t-val">"myAction"</span> <span class="t-attr">type</span>=<span class="t-val">"text"</span><span class="t-tag">&gt;</span>
+
+<span class="t-cmt">&lt;!-- On submit --&gt;</span>
+<span class="t-tag">&lt;form</span> <span class="t-attr">data-submit</span>=<span class="t-val">"myAction"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/form&gt;</span></code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Action function signature</h3>
+        <pre><code><span class="t-key">function</span> myAction(el, event, target) {
+  <span class="t-cmt">// el     — the element that triggered the action (or null from URL)</span>
+  <span class="t-cmt">// event  — the native DOM event (or null from URL)</span>
+  <span class="t-cmt">// target — the string inside parentheses, or null</span>
+}</code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Registering extra event types</h3>
+        <pre><code><span class="t-cmt">// Call before injecting elements that use this event type</span>
+registerEvent(<span class="t-val">'dragstart'</span>);
+registerEvent(<span class="t-val">'dragover'</span>);</code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>No-refresh append + template (reactive)</h3>
+        <p>Use <code>BRIO_API.applyResponse()</code> to test the same <code>state</code>/<code>append</code> response shape your <code>data-fetch</code> endpoint returns.</p>
+        <pre><code><span class="t-key">const</span> data = {
+  <span class="t-attr">state</span>: { demo: { itemCount: <span class="t-num">3</span> } },
+  <span class="t-attr">append</span>: [{
+    <span class="t-attr">target</span>: <span class="t-val">'#demo-bind-list'</span>,
+    <span class="t-attr">template</span>: <span class="t-val">'demo-bind-item-template'</span>,
+    <span class="t-attr">items</span>: [{ text: <span class="t-val">'First'</span> }, { text: <span class="t-val">'Second'</span> }]
+  }]
+};
+BRIO_API.applyResponse(data);</code></pre>
+        <span class="demo-label">Live demo</span>
+        <div class="demo-block">
+          <div class="button-group">
+            <button type="button" data-click="demoAppendItem">Append one item</button>
+            <button type="button" data-click="demoResetBindList">Reset list</button>
+          </div>
+          <p style="margin:0.6rem 0 0.3rem 0;font-size:0.85rem;color:var(--muted);">Items: <strong data-bind="demo.itemCount">0</strong></p>
+          <ul id="demo-bind-list" style="margin:0;padding-left:1.2rem;"></ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ KEYBOARD ════════════════════════ -->
+
+    <div class="section" id="keyboard">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Core</div>
+      <h2>Keyboard shortcuts</h2>
+      <p class="intro">Add <code>data-key</code> to any element. Uses <code>event.key</code> strings. Shortcuts are ignored while the user is typing in a field.</p>
+
+      <div class="subsection">
+        <h3>Syntax</h3>
+        <pre><code><span class="t-cmt">&lt;!-- Single key --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-key</span>=<span class="t-val">"n"</span> <span class="t-attr">data-click</span>=<span class="t-val">"newItem"</span><span class="t-tag">&gt;</span>New<span class="t-tag">&lt;/button&gt;</span>
+
+<span class="t-cmt">&lt;!-- Chord — modifiers always in Ctrl › Alt › Shift › Meta order --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-key</span>=<span class="t-val">"Ctrl+s"</span>       <span class="t-attr">data-click</span>=<span class="t-val">"save"</span><span class="t-tag">&gt;</span>Save<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-key</span>=<span class="t-val">"Ctrl+Shift+z"</span>  <span class="t-attr">data-click</span>=<span class="t-val">"redo"</span><span class="t-tag">&gt;</span>Redo<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-key</span>=<span class="t-val">"Escape"</span>        <span class="t-attr">data-click</span>=<span class="t-val">"closeDialog"</span><span class="t-tag">&gt;</span>Close<span class="t-tag">&lt;/button&gt;</span></code></pre>
+      </div>
+
+      <div class="callout info">
+        <strong>Modifier order matters.</strong> Chords must be written in <strong>Ctrl › Alt › Shift › Meta</strong> order — this is the order <code>buildChord</code> produces internally. <code>Ctrl+Alt+s</code> matches; <code>Alt+Ctrl+s</code> does not.
+      </div>
+
+      <div class="callout warn">
+        <strong>Letter keys are case-sensitive</strong> — use lowercase: <code>"n"</code> not <code>"N"</code>. Special keys keep their <code>event.key</code> casing: <code>Escape</code>, <code>Enter</code>, <code>ArrowDown</code>.
+      </div>
+      <span class="demo-label">Live demo</span>
+      <div class="demo-block">
+        <p style="font-size:0.85rem;color:var(--muted);margin:0 0 0.5rem 0;">Press <strong>N</strong> to open the modeless dialog (focus outside a text field).</p>
+        <button type="button" data-click="openDialog(demo-notifications)" data-key="n">Open notifications <code>N</code></button>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ URL TRIGGER ══════════════════════ -->
+
+    <div class="section" id="url-trigger">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Core</div>
+      <h2>URL trigger</h2>
+      <p class="intro">Any action can be triggered by adding an <code>?action=</code> parameter to the URL. Evaluated on <code>DOMContentLoaded</code>.</p>
+
+      <pre><code>https://example.com?action=openDialog(settings)
+https://example.com?action=myAction(someId)</code></pre>
+    </div>
+
+
+    <!-- ═══════════════════════════════ BUILT-IN ACTIONS ════════════════ -->
+
+    <div class="section" id="builtin-actions">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Core</div>
+      <h2>Built-in actions</h2>
+      <p class="intro">Two shorthands are built in and need no function definition.</p>
+
+      <pre><code><span class="t-cmt">&lt;!-- Navigate to a URL --&gt;</span>
+<span class="t-tag">&lt;a</span> <span class="t-attr">data-click</span>=<span class="t-val">"url:https://example.com"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/a&gt;</span>
+
+<span class="t-cmt">&lt;!-- Reload the page --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"refresh"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/button&gt;</span></code></pre>
+
+      <div class="callout info">
+        <strong>Note:</strong> <code>url:</code> is checked before pipe-splitting, so URLs that happen to contain a <code>|</code> character are handled safely.
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ DIALOGS ═════════════════════════ -->
+
+    <div class="section" id="dialogs">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Components</div>
+      <h2>Dialogs</h2>
+      <p class="intro">Manages modal and modeless dialogs. Focus is trapped inside modal dialogs; focus returns to the opener on close.</p>
+
+      <div class="subsection">
+        <h3>Required HTML structure</h3>
+        <pre><code><span class="t-tag">&lt;dialog</span> <span class="t-attr">id</span>=<span class="t-val">"confirm"</span> <span class="t-attr">aria-labelledby</span>=<span class="t-val">"confirm-title"</span><span class="t-tag">&gt;</span>
+  <span class="t-tag">&lt;h2</span> <span class="t-attr">id</span>=<span class="t-val">"confirm-title"</span><span class="t-tag">&gt;</span>Are you sure?<span class="t-tag">&lt;/h2&gt;</span>
+  <span class="t-tag">&lt;button</span> <span class="t-attr">data-el</span>=<span class="t-val">"close-button"</span> <span class="t-attr">data-click</span>=<span class="t-val">"closeDialog(confirm)"</span><span class="t-tag">&gt;</span>Cancel<span class="t-tag">&lt;/button&gt;</span>
+  <span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"deleteItem|closeDialog(confirm)"</span><span class="t-tag">&gt;</span>Delete<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;/dialog&gt;</span></code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Dialog types</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Type</th><th>Attribute</th><th>Behaviour</th></tr></thead>
+            <tbody>
+              <tr><td>Modal</td><td><em>default</em></td><td>Opened via native <code>showModal()</code></td></tr>
+              <tr><td>Modeless</td><td><code>data-modeless</code></td><td>Opened via native <code>show()</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Actions</h3>
+        <pre><code><span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"openDialog(confirm)"</span><span class="t-tag">&gt;</span>Open<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"closeDialog(confirm)"</span><span class="t-tag">&gt;</span>Close specific<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"closeDialog"</span><span class="t-tag">&gt;</span>Close current modal<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"closeAllDialogs"</span><span class="t-tag">&gt;</span>Close all<span class="t-tag">&lt;/button&gt;</span></code></pre>
+        <span class="demo-label">Live demo</span>
+        <div class="demo-block">
+          <div class="button-group">
+            <button type="button" data-click="openDialog(demo-modal)">Open modal</button>
+            <button type="button" data-click="openDialog(demo-notifications)">Open modeless</button>
+            <button type="button" data-click="openDialog(demo-stack-root)">Open stack flow</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Stacking & layering</h3>
+        <p>Brio keeps dialogs visible by default with baseline z-index and supports stack flows. In this demo, open <strong>stack flow</strong>, then open a nested dialog from inside it, and close back to the previous one.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Focus &amp; Escape</h3>
+        <p>On open, focus moves to the first visible focusable element (skipping the close button), or to <code>[data-autofocus]</code> if present. On close, focus returns to the element that opened the dialog.</p>
+        <p>Escape and backdrop dismiss are blocked unless an enabled <code>[data-el=close-button]</code> exists, which allows required-answer dialogs. Use <code>role="alertdialog"</code> for these cases.</p>
+        <pre><code><span class="t-cmt">&lt;!-- Force focus to a specific element --&gt;</span>
+<span class="t-tag">&lt;textarea</span> <span class="t-attr">data-autofocus</span><span class="t-tag">&gt;&lt;/textarea&gt;</span>
+
+<span class="t-cmt">&lt;!-- Prevent reopen when a second modal opens over this one --&gt;</span>
+<span class="t-tag">&lt;dialog</span> <span class="t-attr">id</span>=<span class="t-val">"alert"</span> <span class="t-attr">data-reopen</span>=<span class="t-val">"false"</span><span class="t-tag">&gt;</span></code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Accessible names</h3>
+        <p><code>addDialogTitleIds()</code> runs automatically at init. It assigns <code>id="dialogId-title"</code> to the first <code>&lt;h2&gt;</code> inside each dialog (skipping those that already have an id) so <code>aria-labelledby</code> can reference it. A console warning is logged for any dialog with no accessible name at all.</p>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ FEEDBACK ════════════════════════ -->
+
+    <div class="section" id="feedback">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Components</div>
+      <h2>Feedback &amp; forms</h2>
+      <p class="intro">Inline messages for client-side and server-side feedback. Also the primary form validation system — no separate library needed.</p>
+
+      <div class="subsection">
+        <h3>HTML patterns</h3>
+        <pre><code><span class="t-cmt">&lt;!-- Field-level: aria-describedby wired automatically --&gt;</span>
+<span class="t-tag">&lt;input</span> <span class="t-attr">id</span>=<span class="t-val">"email"</span> <span class="t-attr">type</span>=<span class="t-val">"email"</span><span class="t-tag">&gt;</span>
+<span class="t-tag">&lt;span</span> <span class="t-attr">data-message</span> <span class="t-attr">data-for</span>=<span class="t-val">"email"</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;&lt;/span&gt;</span>
+
+<span class="t-cmt">&lt;!-- Form-level: scoped to nearest form --&gt;</span>
+<span class="t-tag">&lt;form&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">data-message</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;&lt;/div&gt;</span>
+  …
+<span class="t-tag">&lt;/form&gt;</span>
+
+<span class="t-cmt">&lt;!-- Non-form feedback: nearest sibling --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"addToCart"</span><span class="t-tag">&gt;</span>Add to cart<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;span</span> <span class="t-attr">data-message</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;&lt;/span&gt;</span>
+
+<span class="t-cmt">&lt;!-- Custom scope --&gt;</span>
+<span class="t-tag">&lt;div</span> <span class="t-attr">data-feedback-scope</span><span class="t-tag">&gt;</span>
+  <span class="t-tag">&lt;div</span> <span class="t-attr">data-message</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;&lt;/div&gt;</span>
+  …
+<span class="t-tag">&lt;/div&gt;</span></code></pre>
+        <span class="demo-label">Live demo</span>
+        <div class="demo-block">
+          <p style="font-size:0.85rem;color:var(--muted);margin:0 0 0.75rem 0;">Counter with sibling message — click until max, then submit the form to see field-level and form-level messages.</p>
+          <div class="button-group" style="margin-bottom:1rem;">
+            <button type="button" data-click="incrementDemoCounter">Add item</button>
+            <span id="demo-counter-display" aria-live="polite">0</span>
+          </div>
+          <form id="demo-contact" data-submit="submitDemoContactForm" novalidate>
+            <div data-message hidden></div>
+            <div class="field">
+              <label for="demo-email">Email</label>
+              <input type="email" id="demo-email" name="email" placeholder="you@example.com">
+              <span data-message data-for="demo-email" hidden></span>
+            </div>
+            <button type="submit">Submit (simulated errors)</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>JavaScript API</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Function</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>showMessage(target, msg, type)</td><td>Show a message. <code>target</code> is a field id string or triggering element. Types: <code>error</code> (default), <code>success</code>, <code>info</code>, <code>warning</code></td></tr>
+              <tr><td>readServerMessages(el, data)</td><td>Distribute a parsed server response. Also calls <code>enableForm</code> automatically when <code>success</code> is false <span class="badge auto">auto</span></td></tr>
+              <tr><td>clearMessages(el)</td><td>Clear all messages in the nearest form or <code>[data-feedback-scope]</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Form locking</h3>
+        <p><code>actions.js</code> calls <code>disableForm</code> automatically on every <code>submit</code>. <code>readServerMessages</code> calls <code>enableForm</code> automatically when <code>success</code> is false. Call <code>enableForm</code> manually if you handle errors outside <code>readServerMessages</code>.</p>
+        <pre><code>async <span class="t-key">function</span> submitContact(el, event) {
+  event.preventDefault();
+  clearMessages(el);
+  try {
+    const data = await getData(<span class="t-val">'/api/contact'</span>, true);
+    readServerMessages(el, data); <span class="t-cmt">// enableForm called automatically if !data.success</span>
+    if (data.success) closeDialog(null, null, <span class="t-val">'contact'</span>);
+  } catch (e) {
+    showMessage(el, <span class="t-val">'Something went wrong.'</span>, <span class="t-val">'error'</span>);
+    enableForm(el.closest(<span class="t-val">'form'</span>)?.id); <span class="t-cmt">// call manually in catch</span>
+  }
+}</code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Server response contract</h3>
+        <pre><code>{
+  <span class="t-key">"success"</span>: true,
+  <span class="t-key">"messages"</span>: [
+    { <span class="t-key">"field"</span>: <span class="t-val">"email"</span>, <span class="t-key">"message"</span>: <span class="t-val">"Please enter a valid email."</span>, <span class="t-key">"type"</span>: <span class="t-val">"error"</span> },
+    { <span class="t-key">"field"</span>: null,    <span class="t-key">"message"</span>: <span class="t-val">"Something went wrong."</span>,          <span class="t-key">"type"</span>: <span class="t-val">"error"</span> }
+  ]
+}</code></pre>
+        <p><code>field: "id"</code> routes to <code>[data-message][data-for="id"]</code>. <code>field: null</code> routes to the nearest form-level <code>[data-message]</code>.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Styling messages</h3>
+        <pre><code>[data-message][data-type=<span class="t-val">"error"</span>]   { color: var(--color-error); }
+[data-message][data-type=<span class="t-val">"success"</span>] { color: var(--color-success); }
+[data-message][data-type=<span class="t-val">"info"</span>]    { color: var(--color-info); }
+[data-message][data-type=<span class="t-val">"warning"</span>] { color: var(--color-warning); }</code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Kirby CMS — Uniform helper</h3>
+        <pre><code><span class="t-key">function</span> formResponse($form) {
+  $messages = [];
+  foreach ($form->errors() as $field => $errors) {
+    foreach ($errors as $message) {
+      $messages[] = [<span class="t-val">'field'</span> => $field, <span class="t-val">'message'</span> => $message, <span class="t-val">'type'</span> => <span class="t-val">'error'</span>];
+    }
+  }
+  return Response::json([
+    <span class="t-val">'success'</span>  => $form->success(),
+    <span class="t-val">'messages'</span> => $messages
+  ], $form->success() ? 200 : 400);
+}</code></pre>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ DYNAMIC FIELDS ══════════════════ -->
+
+    <div class="section" id="dynamic-fields">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Components</div>
+      <h2>Dynamic fields</h2>
+      <p class="intro">Show, hide, enable, or disable elements based on other field values. No JavaScript needed. Re-evaluated on every <code>change</code> and <code>submit</code> event.</p>
+
+      <div class="subsection">
+        <h3>Attributes</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Attribute</th><th>Effect when condition is met</th></tr></thead>
+            <tbody>
+              <tr><td>data-show-when</td><td>Removes <code>hidden</code></td></tr>
+              <tr><td>data-hide-when</td><td>Adds <code>hidden</code></td></tr>
+              <tr><td>data-enable-when</td><td>Removes <code>disabled</code></td></tr>
+              <tr><td>data-disable-when</td><td>Adds <code>disabled</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Condition syntax</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Syntax</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td>fieldId==value</td><td>Field equals value</td></tr>
+              <tr><td>fieldId!=value</td><td>Field does not equal value</td></tr>
+              <tr><td>cond1||cond2</td><td>OR — applied if ANY condition is met</td></tr>
+              <tr><td>cond1&&cond2</td><td>AND — applied if ALL conditions are met</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout warn"><strong>Note:</strong> <code>||</code> and <code>&&</code> cannot be mixed in a single expression.</div>
+      </div>
+
+      <div class="subsection">
+        <h3>Examples</h3>
+        <pre><code><span class="t-cmt">&lt;!-- Show when plan = pro OR enterprise --&gt;</span>
+<span class="t-tag">&lt;div</span> <span class="t-attr">data-show-when</span>=<span class="t-val">"plan==pro||plan==enterprise"</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/div&gt;</span>
+
+<span class="t-cmt">&lt;!-- Show when plan = enterprise AND seats = 10 --&gt;</span>
+<span class="t-tag">&lt;div</span> <span class="t-attr">data-show-when</span>=<span class="t-val">"plan==enterprise&&seats==10"</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/div&gt;</span>
+
+<span class="t-cmt">&lt;!-- Hide when status is not active --&gt;</span>
+<span class="t-tag">&lt;div</span> <span class="t-attr">data-hide-when</span>=<span class="t-val">"status!=active"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/div&gt;</span>
+
+<span class="t-cmt">&lt;!-- Disable when plan = free --&gt;</span>
+<span class="t-tag">&lt;select</span> <span class="t-attr">data-disable-when</span>=<span class="t-val">"plan==free"</span><span class="t-tag">&gt;</span>…<span class="t-tag">&lt;/select&gt;</span></code></pre>
+        <span class="demo-label">Live demo</span>
+        <div class="demo-block">
+          <div class="field">
+            <label for="demo-plan">Plan</label>
+            <select id="demo-plan" name="plan">
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+          <div class="field" data-show-when="demo-plan==pro||demo-plan==enterprise" hidden>
+            <label for="demo-seats">Number of seats</label>
+            <input type="text" id="demo-seats" name="seats" placeholder="e.g. 5">
+          </div>
+          <div class="field" data-show-when="demo-plan==enterprise" hidden>
+            <label for="demo-company">Company name</label>
+            <input type="text" id="demo-company" name="company" placeholder="Acme Inc">
+          </div>
+          <button type="button" data-disable-when="demo-plan==free">Upgrade feature</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ DYNAMIC TEXT ═════════════════════ -->
+
+    <div class="section" id="dynamic-text">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Components</div>
+      <h2>Dynamic text</h2>
+      <p class="intro">Update visible text in response to field input or action results. Re-evaluated on every <code>change</code>, <code>input</code>, and <code>submit</code> event.</p>
+
+      <div class="subsection">
+        <h3>Source syntax</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Syntax</th><th>Reads from</th></tr></thead>
+            <tbody>
+              <tr><td>#id</td><td>DOM element — <code>.value</code> for inputs/selects/textareas, <code>.textContent</code> for others</td></tr>
+              <tr><td>object.property</td><td>JS scope — dot-notation path resolved from <code>window</code></td></tr>
+              <tr><td>{{placeholders}}</td><td>Template — detected when value contains <code>{{</code>. Mix both source types freely.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Declarative</h3>
+        <pre><code><span class="t-cmt">&lt;!-- Mirror a field value --&gt;</span>
+<span class="t-tag">&lt;span</span> <span class="t-attr">data-bind</span>=<span class="t-val">"#field-id"</span><span class="t-tag">&gt;&lt;/span&gt;</span>
+
+<span class="t-cmt">&lt;!-- Read from a JS object (translations, config) --&gt;</span>
+<span class="t-tag">&lt;span</span> <span class="t-attr">data-bind</span>=<span class="t-val">"translations.saveButton"</span><span class="t-tag">&gt;&lt;/span&gt;</span>
+
+<span class="t-cmt">&lt;!-- Template — mix #id and dot.notation --&gt;</span>
+<span class="t-tag">&lt;span</span> <span class="t-attr">data-bind</span>=<span class="t-val">"{{#qty}} × {{pricing.currency}}{{#price}}"</span><span class="t-tag">&gt;&lt;/span&gt;</span></code></pre>
+      </div>
+
+      <div class="subsection">
+        <h3>Programmatic</h3>
+        <pre><code><span class="t-cmt">// Target by id or element reference</span>
+setText(<span class="t-val">'status-label'</span>, <span class="t-val">'Saved ✓'</span>);
+setText(el, translations.saved);
+
+<span class="t-cmt">// After updating a JS variable, re-evaluate all [data-bind] elements</span>
+window.ui = { greeting: <span class="t-val">'Welkom terug'</span>, saveButton: <span class="t-val">'Opslaan'</span> };
+refreshBindings();</code></pre>
+        <span class="demo-label">Live demo</span>
+        <div class="demo-block">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+            <div>
+              <div class="field">
+                <label for="demo-name">Name</label>
+                <input type="text" id="demo-name" placeholder="Your name">
+              </div>
+              <div class="button-group" style="margin-top:0.75rem;">
+                <button type="button" data-click="setLanguageNl">NL</button>
+                <button type="button" data-click="setLanguageEn">EN</button>
+              </div>
+              <div style="margin-top:0.75rem;">
+                <button type="button" data-click="simulateSave">Save document</button>
+                <button type="button" data-click="simulateReset">Reset</button>
+              </div>
+            </div>
+            <div style="padding:0.75rem;background:var(--bg);border-radius:var(--radius);font-size:0.85rem;">
+              <div><strong>Mirror:</strong> <span data-bind="#demo-name">—</span></div>
+              <div style="margin-top:0.5rem;"><strong>ui.greeting:</strong> <span data-bind="ui.greeting">—</span></div>
+              <div><strong>Status:</strong> <span id="demo-save-status">Ready</span></div>
+              <div><strong>Time:</strong> <span id="demo-save-time">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ DISCLOSURE ═══════════════════════ -->
+
+    <div class="section" id="disclosure">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Components</div>
+      <h2>Disclosure toggle</h2>
+      <p class="intro">Toggle visibility of any element. <code>aria-expanded</code> and <code>aria-controls</code> are managed automatically.</p>
+
+      <pre><code><span class="t-cmt">&lt;!-- Explicit target --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"toggle(faq-1)"</span> <span class="t-attr">aria-expanded</span>=<span class="t-val">"false"</span><span class="t-tag">&gt;</span>Question<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;div</span> <span class="t-attr">id</span>=<span class="t-val">"faq-1"</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;</span>Answer<span class="t-tag">&lt;/div&gt;</span>
+
+<span class="t-cmt">&lt;!-- Implicit next sibling — id auto-generated if absent --&gt;</span>
+<span class="t-tag">&lt;button</span> <span class="t-attr">data-click</span>=<span class="t-val">"toggle"</span> <span class="t-attr">aria-expanded</span>=<span class="t-val">"false"</span><span class="t-tag">&gt;</span>Show more<span class="t-tag">&lt;/button&gt;</span>
+<span class="t-tag">&lt;div</span> <span class="t-attr">hidden</span><span class="t-tag">&gt;</span>More content<span class="t-tag">&lt;/div&gt;</span></code></pre>
+
+      <div class="callout info">
+        <strong>Add <code>aria-expanded="false"</code> to the trigger</strong> to declare the correct initial ARIA state before any interaction — <code>toggle</code> keeps it in sync from that point on.
+      </div>
+      <span class="demo-label">Live demo</span>
+      <div class="demo-block">
+        <div style="margin-bottom:0.75rem;">
+          <button type="button" data-click="toggle(demo-toggle-content)" aria-expanded="false">Show details</button>
+          <div id="demo-toggle-content" hidden style="margin-top:0.5rem;padding:0.75rem;background:var(--bg);border-radius:var(--radius);font-size:0.9rem;">
+            <code>aria-expanded</code> and <code>aria-controls</code> are managed automatically.
+          </div>
+        </div>
+        <div>
+          <button type="button" data-click="toggle" aria-expanded="false">Show more (implicit sibling)</button>
+          <div hidden style="margin-top:0.5rem;padding:0.75rem;background:var(--bg);border-radius:var(--radius);font-size:0.9rem;">
+            Next sibling — id auto-generated.
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ WRITING ACTIONS ══════════════════ -->
+
+    <div class="section" id="writing-actions">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Reference</div>
+      <h2>Writing action functions</h2>
+      <p class="intro">Define functions in <code>project.js</code>. Any function in global scope is immediately available as a <code>data-*</code> value — no registration needed.</p>
+
+      <pre><code><span class="t-cmt">// Simple synchronous action</span>
+<span class="t-key">function</span> saveItem(el, event, target) {
+  <span class="t-cmt">// ...</span>
+}
+
+<span class="t-cmt">// Async action with server feedback</span>
+async <span class="t-key">function</span> bookSlot(el, event, target) {
+  clearMessages(el);
+  try {
+    const data = await getData(<span class="t-val">'/api/book/'</span> + target, true);
+    readServerMessages(el, data); <span class="t-cmt">// also calls enableForm if !data.success</span>
+    if (data.success) closeDialog(null, null, <span class="t-val">'booking'</span>);
+  } catch (e) {
+    showMessage(el, <span class="t-val">'Something went wrong. Please try again.'</span>, <span class="t-val">'error'</span>);
+    enableForm(el.closest(<span class="t-val">'form'</span>)?.id);
+  }
+}</code></pre>
+    </div>
+
+
+    <!-- ═══════════════════════════════ UTILS — DOM ══════════════════════ -->
+
+    <div class="section" id="utils-dom">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Reference</div>
+      <h2>Utils — DOM</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Function</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>hasAncestor(el, selector)</td><td>Returns true if <code>el</code> has a matching ancestor</td></tr>
+            <tr><td>focus(id)</td><td>Focus element by id</td></tr>
+            <tr><td>disable(el, event, selector)</td><td>Disable element by selector, or the triggering element</td></tr>
+            <tr><td>disableForm(formId)</td><td>Set all fields to <code>readOnly</code> after submit. Sets submit to <code>data-state="loading"</code>, plus <code>aria-disabled</code> and form <code>aria-busy</code>. Called automatically on every submit <span class="badge auto">auto</span></td></tr>
+            <tr><td>enableForm(formId)</td><td>Reverse <code>disableForm</code>. Called automatically by <code>readServerMessages</code> when <code>success</code> is false <span class="badge auto">auto</span></td></tr>
+            <tr><td>setThemeColor(color)</td><td>Set or create <code>&lt;meta name="theme-color"&gt;</code></td></tr>
+            <tr><td>getElementValue(el)</td><td>Returns <code>.value</code> for form fields, <code>'true'/'false'</code> for checkboxes, <code>.textContent</code> for other elements. Shared by dynamic fields, dynamic text, and condition evaluation.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ UTILS — NETWORK & STORAGE ══════ -->
+
+    <div class="section" id="utils-network">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Reference</div>
+      <h2>Utils — Network &amp; storage</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Function</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>getData(url, parse)</td><td>Async fetch with Bearer auth. Requires <code>jwtToken</code> in scope. Pass <code>true</code> to parse response as JSON.</td></tr>
+            <tr><td>getStorageItem(key, default)</td><td>Get <code>localStorage</code> item, create with default value if absent. Safe in private mode.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ UTILS — TIMING ══════════════════ -->
+
+    <div class="section" id="utils-timing">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Reference</div>
+      <h2>Utils — Timing</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Function</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>debounce(fn, wait)</td><td>Returns a debounced fn. Fires after <code>wait</code> ms of inactivity. Default 300ms. Use for search inputs, resize handlers.</td></tr>
+            <tr><td>throttle(fn, wait)</td><td>Returns a throttled fn. Fires at most once per <code>wait</code> ms. Default 100ms. Use for scroll, mousemove handlers.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <pre><code><span class="t-key">const</span> onSearch = debounce((event) => fetchResults(event.target.value), 300);
+input.addEventListener(<span class="t-val">'input'</span>, onSearch);
+
+<span class="t-key">const</span> onScroll = throttle(() => updateHeader(), 100);
+window.addEventListener(<span class="t-val">'scroll'</span>, onScroll);</code></pre>
+    </div>
+
+
+    <!-- ═══════════════════════════════ UTILS — OTHER ════════════════════ -->
+
+    <div class="section" id="utils-other">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Reference</div>
+      <h2>Utils — Other</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Function</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>setText(target, value)</td><td>Set <code>textContent</code> of an element by id string or element reference</td></tr>
+            <tr><td>refreshBindings()</td><td>Re-evaluate all <code>[data-bind]</code> elements. Call after updating a JS variable.</td></tr>
+            <tr><td>ucFirst(string)</td><td>Capitalise first character</td></tr>
+            <tr><td>hasNumber(string)</td><td>Returns true if string contains a digit</td></tr>
+            <tr><td>getRandomNumber(range, negative)</td><td>Random integer within <code>[min, max]</code> range, optionally negative</td></tr>
+            <tr><td>removeParams()</td><td>Strip all query parameters from the current URL (uses <code>history.replaceState</code>)</td></tr>
+            <tr><td>getRelativeDate(timestamp)</td><td>Localised relative date string. Requires <code>translations.today</code> and <code>translations.yesterday</code> in scope.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════ ACCESSIBILITY ════════════════════ -->
+
+    <div class="section" id="accessibility">
+      <span class="section-anchor" aria-hidden="true"></span>
+      <div class="section-label">Reference</div>
+      <h2>Accessibility</h2>
+
+      <div class="subsection">
+        <h3>Dialogs</h3>
+        <p>On open, focus moves into the dialog. On close, focus returns to the opener. Native modal dialogs use browser top-layer behavior from <code>showModal()</code>, including background interaction blocking and focus containment.</p>
+        <p>Escape closes modal dialogs — blocked when no enabled <code>[data-el=close-button]</code> is present. Use <code>role="alertdialog"</code> for dialogs that require a decision.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Feedback messages</h3>
+        <p><code>[data-message]</code> regions are announced automatically: errors via <code>role="alert"</code>, all other types via <code>aria-live="polite"</code>. Field-level messages are wired to their input via <code>aria-describedby</code> when <code>showMessage</code> is called — no manual wiring needed.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Dynamic fields</h3>
+        <p><code>data-show-when</code> / <code>data-hide-when</code> handle visual state only. For form-field-driven disclosure, add <code>aria-controls="target-id"</code> to the controlling element manually. If the revealed content is informational (not just a new input), also add <code>aria-live="polite"</code> to the revealed region.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Keyboard shortcuts</h3>
+        <p>Letter keys in <code>data-key</code> are case-sensitive — use lowercase. Chords must be in Ctrl › Alt › Shift › Meta order. Shortcuts are ignored while focus is inside a text field.</p>
+      </div>
+
+    </div>
+
+
+  </main>
+</div>
+</div>
+
+
+<!-- ── Native dialogs for live demos ─────────────────────────────────────── -->
+<dialog class="demo-dialog" id="demo-modal" aria-labelledby="demo-modal-title">
+  <h2 id="demo-modal-title">Demo modal</h2>
+  <p style="font-size:0.9rem;color:var(--muted);margin:0;">Native modal dialog. Press Escape to close if an enabled close button exists.</p>
+  <div class="dialog-actions">
+    <button type="button" data-el="close-button" data-click="closeDialog(demo-modal)">Close</button>
+  </div>
+</dialog>
+<dialog class="demo-dialog" id="demo-notifications" data-modeless aria-labelledby="demo-notifications-title">
+  <h2 id="demo-notifications-title">Modeless dialog</h2>
+  <p style="font-size:0.9rem;color:var(--muted);margin:0;">This one uses <code>data-modeless</code> and opens with <code>show()</code>.</p>
+  <div class="dialog-actions">
+    <button type="button" data-el="close-button" data-click="closeDialog(demo-notifications)">Close</button>
+    <button type="button" data-click="closeDialog(demo-notifications)" data-key="Escape">Close (Esc)</button>
+  </div>
+</dialog>
+<dialog class="demo-dialog" id="demo-stack-root" aria-labelledby="demo-stack-root-title">
+  <h2 id="demo-stack-root-title">Stack root dialog</h2>
+  <p style="font-size:0.9rem;color:var(--muted);margin:0;">Open another dialog from here to verify stack behavior and focus return.</p>
+  <div class="dialog-actions">
+    <button type="button" data-click="openDialog(demo-stack-child)">Open child dialog</button>
+    <button type="button" data-el="close-button" data-click="closeDialog(demo-stack-root)">Close</button>
+  </div>
+</dialog>
+<dialog class="demo-dialog" id="demo-stack-child" aria-labelledby="demo-stack-child-title">
+  <h2 id="demo-stack-child-title">Stack child dialog</h2>
+  <p style="font-size:0.9rem;color:var(--muted);margin:0;">Closing this one returns to the parent dialog.</p>
+  <div class="dialog-actions">
+    <button type="button" data-el="close-button" data-click="closeDialog(demo-stack-child)">Close child</button>
+  </div>
+</dialog>
+
+<template id="demo-bind-item-template">
+  <li data-bind="text"></li>
+</template>
+
+
+<script src="../src/utils.js" defer></script>
+<script src="../src/actions.js" defer></script>
+<script src="../src/binding.js" defer></script>
+<script src="../src/dialogs.js" defer></script>
+<script src="../src/feedback.js" defer></script>
+<script defer>
+  // ── Demo action functions for live demos on this page ───────────────────
+  window.ui = { greeting: 'Welcome back', instruction: 'Changes are saved automatically.', saveButton: 'Save' };
+  window.pricing = { currency: '€', billingNote: 'Billed monthly' };
+  if (typeof refreshBindings === 'function') refreshBindings();
+
+  let demoCounter = 0;
+  const DEMO_MAX = 5;
+  function incrementDemoCounter(el, event, target) {
+    demoCounter++;
+    var elDisplay = document.getElementById('demo-counter-display');
+    if (elDisplay) elDisplay.textContent = demoCounter;
+    if (demoCounter >= DEMO_MAX && typeof showMessage === 'function') {
+      showMessage(el, 'Maximum of ' + DEMO_MAX + ' reached.', 'warning');
+      el.disabled = true;
+    }
+  }
+
+  async function submitDemoContactForm(el, event, target) {
+    event.preventDefault();
+    if (typeof clearMessages === 'function') clearMessages(el);
+    await new Promise(function(r) { setTimeout(r, 500); });
+    var data = {
+      success: false,
+      messages: [
+        { field: 'email', message: 'Please enter a valid email.', type: 'error' },
+        { field: null, message: 'Please fix the errors above.', type: 'error' }
+      ]
+    };
+    if (typeof readServerMessages === 'function') readServerMessages(el, data);
+  }
+
+  function setLanguageNl() {
+    window.ui = { greeting: 'Welkom terug', instruction: 'Wijzigingen worden automatisch opgeslagen.', saveButton: 'Opslaan' };
+    window.pricing = { currency: '€', billingNote: 'Maandelijks gefactureerd' };
+    if (typeof refreshBindings === 'function') refreshBindings();
+  }
+  function setLanguageEn() {
+    window.ui = { greeting: 'Welcome back', instruction: 'Changes are saved automatically.', saveButton: 'Save' };
+    window.pricing = { currency: '€', billingNote: 'Billed monthly' };
+    if (typeof refreshBindings === 'function') refreshBindings();
+  }
+  async function simulateSave() {
+    if (typeof setText === 'function') {
+      setText('demo-save-status', 'Saving…');
+      setText('demo-save-time', '—');
+    }
+    await new Promise(function(r) { setTimeout(r, 700); });
+    if (typeof setText === 'function') {
+      setText('demo-save-status', 'Saved ✓');
+      setText('demo-save-time', new Date().toLocaleTimeString());
+    }
+  }
+  function simulateReset() {
+    if (typeof setText === 'function') {
+      setText('demo-save-status', 'Ready');
+      setText('demo-save-time', '—');
+    }
+  }
+
+  let demoBindCounter = 0;
+  function demoAppendItem() {
+    demoBindCounter += 1;
+    if (window.BRIO_API?.applyResponse) {
+      window.BRIO_API.applyResponse({
+        state: { demo: { itemCount: demoBindCounter } },
+        append: [{
+          target: '#demo-bind-list',
+          template: 'demo-bind-item-template',
+          items: [{ text: 'Item ' + demoBindCounter }]
+        }]
+      });
+    }
+  }
+
+  function demoResetBindList() {
+    demoBindCounter = 0;
+    if (window.BRIO_API?.applyResponse) {
+      window.BRIO_API.applyResponse({
+        state: { demo: { itemCount: 0 } },
+        patches: [{ target: '#demo-bind-list', html: '' }]
+      });
+    }
+  }
+</script>
+<script>
+
+  // ── Active nav highlight on scroll ──────────────────────────────────────
+
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const HEADER_H = 48 + 24; // --header-h + buffer
+
+  function updateActiveLink() {
+    let activeId = null;
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= HEADER_H) activeId = section.id;
+    }
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + activeId);
+    });
+  }
+
+  window.addEventListener('scroll', updateActiveLink, { passive: true });
+  updateActiveLink();
+
+
+  // ── Sidebar filter ──────────────────────────────────────────────────────
+
+  const searchInput = document.getElementById('nav-search');
+  const noResults   = document.getElementById('no-results');
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    sidebar.classList.toggle('search-active', q.length > 0);
+    let visible = 0;
+    navLinks.forEach(link => {
+      const matches = !q || link.textContent.trim().toLowerCase().includes(q);
+      link.hidden = !matches;
+      if (matches) visible++;
+    });
+    noResults.style.display = (q && visible === 0) ? 'block' : 'none';
+  });
+
+
+  // ── Mobile drawer ───────────────────────────────────────────────────────
+
+  const menuBtn      = document.getElementById('menu-btn');
+  const sidebar      = document.getElementById('sidebar');
+  const drawerClose  = document.getElementById('drawer-close');
+  const overlay      = document.getElementById('drawer-overlay');
+
+  function openDrawer() {
+    sidebar.classList.add('open');
+    overlay.classList.add('visible');
+    document.body.classList.add('drawer-open');
+    menuBtn.setAttribute('aria-expanded', 'true');
+    drawerClose.focus();
+  }
+
+  function closeDrawer() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('visible');
+    document.body.classList.remove('drawer-open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.focus();
+  }
+
+  menuBtn.addEventListener('click', openDrawer);
+  drawerClose.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+
+  // Close drawer when a nav link is tapped on mobile
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (sidebar.classList.contains('open')) closeDrawer();
+    });
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeDrawer();
+  });
+
+  // ── First-visit: open drawer automatically on mobile ────────────────────
+  // Only fires on screens where the sidebar is a drawer (≤720px),
+  // and only once — after that, localStorage prevents it re-triggering.
+  const SEEN_KEY = 'brio-docs-nav-seen';
+  const isMobileDrawer = () => window.matchMedia('(max-width: 720px)').matches;
+
+  if (isMobileDrawer() && !localStorage.getItem(SEEN_KEY)) {
+    // Small delay so the page has painted before the drawer slides in
+    setTimeout(openDrawer, 350);
+  }
+
+  // Mark as seen the first time they close it (or tap a link)
+  function markSeen() {
+    localStorage.setItem(SEEN_KEY, '1');
+  }
+
+  drawerClose.addEventListener('click', markSeen);
+  overlay.addEventListener('click', markSeen);
+  navLinks.forEach(link => link.addEventListener('click', markSeen));
+
+</script>
+
+</body>
+</html>

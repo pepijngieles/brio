@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Brio — Behaviour in your HTML</title>
+  <style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #123547;
+      --surface:   #143b4f;
+      --surface-2: #17455c;
+      --border:    #396074;
+      --text:      #F0F0F0;
+      --body:      rgba(247,247,247,.8);
+      --code:      rgba(247,247,247,.4);
+      --code-dim:  rgba(247,247,247,.4);
+      --accent:    #5abcec;
+      --green:     #5CE6B8;
+      font-size: 15px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 720px;
+      padding: clamp(3rem, 10vw, 6rem) clamp(1.5rem, 5vw, 3rem) 4rem;
+    }
+
+    .brand {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--code-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .hero {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: normal;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    .tagline {
+      font-size: 0.95rem;
+      color: var(--body);
+      line-height: 1.7;
+      margin-bottom: clamp(2.5rem, 6vw, 4rem);
+      max-width: 32em;
+    }
+
+    .snippets {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .snippet {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .snippet-head {
+      padding: 1rem 1.25rem 0.75rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .snippet-title {
+      font-size: clamp(1rem, 2vw, 1.1rem);
+      font-weight: normal;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 0.4rem;
+    }
+
+    .snippet-desc {
+      font-size: 0.82rem;
+      color: var(--body);
+      line-height: 1.6;
+    }
+
+    .snippet-desc code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      padding: 0.1em 0.4em;
+      border-radius: 2px;
+    }
+
+    .snippet-link {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+      margin-top: 0.5rem;
+      display: inline-block;
+      transition: color 0.15s;
+    }
+
+    .snippet-link:hover { color: var(--text); }
+
+    .snippet pre {
+      padding: 1rem 1.25rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: var(--code);
+      white-space: pre;
+      overflow-x: auto;
+      margin: 0;
+      background-color: var(--surface-2);
+    }
+
+    .a  { color: var(--accent); }
+    .g  { color: var(--green); }
+    .t  { color: var(--text); }
+    .d  { color: var(--code-dim); }
+
+    .cta-wrap {
+      margin-top: clamp(2.5rem, 6vw, 4rem);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      background-color: rgba(255,255,255,0.05);
+      text-decoration: none;
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+
+    .cta:hover {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+
+    button.cta { cursor: pointer; }
+    .cta.copied { border-color: var(--green); color: var(--green); }
+
+    .snippet-head .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .snippet-ai {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, var(--surface)) 0%, var(--surface) 100%);
+    }
+
+    .snippet-ai .snippet-head {
+      background: transparent;
+      border-bottom: none;
+    }
+
+    .snippet-ai-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    .snippet-ai .sparkle {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--accent);
+      margin-top: 0.1rem;
+    }
+
+    .brio-file-tile {
+      margin-top: 0.75rem;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .brio-file-tile .file-info {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: var(--body);
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .brio-file-tile .file-info .size { color: var(--code-dim); }
+
+    .brio-file-tile .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .brio-file-tile .cta { margin: 0; }
+
+  </style>
+</head>
+<body>
+<div data-el="page-content">
+<main class="page">
+
+  <p class="brand">Brio</p>
+  <h1 class="hero">Behaviour that lives in your HTML.</h1>
+  <p class="tagline">A tiny JavaScript framework for multi-page sites. Declare actions and conditions in markup. No build step, no dependencies.</p>
+
+  <section class="section section-examples">
+    <h2 class="section-title" style="position:absolute;left:-9999px;">Examples of Brio in HTML</h2>
+    <ul class="snippets">
+
+      <li class="snippet">
+        <div class="snippet-head">
+          <h3 class="snippet-title">One attribute, endless possibilities.</h3>
+          <p class="snippet-desc">Bind any element to a function. Pass an id or slug in parentheses — your <code>.js</code> files receives it as <code>target</code>.</p>
+          <a href="reference.html#binding-actions" class="snippet-link">Docs →</a>
+        </div>
+        <pre>&lt;button <span class="a">data-click</span>=<span class="g">"addToCart(sku-912)"</span>&gt;Add to cart&lt;/button&gt;</pre>
+      </li>
+
+      <li class="snippet">
+        <div class="snippet-head">
+          <h3 class="snippet-title">Declare conditions, don't write event listeners.</h3>
+          <p class="snippet-desc">Automatically show, hide, enable, or disable based on another field's value.</p>
+          <a href="reference.html#dynamic-fields" class="snippet-link">Docs →</a>
+        </div>
+        <pre>&lt;div <span class="a">data-show-when</span>=<span class="g">"account-type==business"</span>&gt;
+  &lt;label&gt;VAT number&lt;/label&gt;
+  &lt;input type=<span class="g">"text"</span> id=<span class="g">"vat"</span>&gt;
+&lt;/div&gt;</pre>
+      </li>
+
+      <li class="snippet">
+        <div class="snippet-head">
+          <h3 class="snippet-title">Accessible dialogs, out of the box.</h3>
+          <p class="snippet-desc">Open a modal; run multiple actions in order with <code>|</code>. Focus trap and Escape are built in.</p>
+          <a href="reference.html#dialogs" class="snippet-link">Docs →</a>
+        </div>
+        <pre>&lt;button <span class="a">data-click</span>=<span class="g">"openDialog(confirm)"</span>&gt;Delete&lt;/button&gt;
+&lt;button <span class="a">data-click</span>=<span class="g">"deleteItem|closeDialog(confirm)"</span>&gt;Confirm&lt;/button&gt;</pre>
+      </li>
+
+      <li class="snippet">
+        <div class="snippet-head">
+          <h3 class="snippet-title">Dynamic binding. Declared, not coded.</h3>
+          <p class="snippet-desc">Use <code>data-bind</code> to mirror a field (<code>#id</code>) or state/object value. Mix both in <code>{{placeholders}}</code> for live summaries and translations.</p>
+          <a href="reference.html#dynamic-text" class="snippet-link">Docs →</a>
+        </div>
+        <pre>&lt;span <span class="a">data-bind</span>=<span class="g">"{{#nights}} nights · {{pricing.currency}}{{#total}}"</span>&gt;&lt;/span&gt;</pre>
+      </li>
+
+      <li class="snippet">
+        <div class="snippet-head">
+          <h3 class="snippet-title">Inline feedback. For actions, fields and forms.</h3>
+          <p class="snippet-desc">Field-level and form-level messages. <code>showMessage('email', 'Invalid.')</code> or <code>readServerMessages(el, data)</code> — ARIA wired automatically.</p>
+          <a href="reference.html#feedback" class="snippet-link">Docs →</a>
+        </div>
+        <pre>&lt;input id=<span class="g">"email"</span> type=<span class="g">"email"</span>&gt;
+&lt;span <span class="a">data-message</span> <span class="a">data-for</span>=<span class="g">"email"</span> hidden&gt;&lt;/span&gt;</pre>
+      </li>
+
+    </ul>
+  </section>
+
+  <section class="section section-get-brio" aria-labelledby="get-brio-heading">
+    <h2 id="get-brio-heading" class="section-title" style="position:absolute;left:-9999px;">Get Brio</h2>
+    <ul class="snippets">
+
+      <li class="snippet snippet-ai">
+        <div class="snippet-head">
+          <div class="snippet-ai-head">
+            <svg class="sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+              <path d="M5 21l1.5-2.5L9 18l-2.5-1.5L5 14l-1.5 2.5L1 18l2.5 1.5L5 21z"/>
+              <path d="M19 21l1.5-2.5L23 18l-2.5-1.5L19 14l-1.5 2.5L15 18l2.5 1.5L19 21z"/>
+            </svg>
+            <div>
+              <p class="snippet-desc">Brio's conventions fit in a single system prompt. Drop <code>brio.md</code> into your project and your AI assistant knows the full API.</p>
+              <div class="brio-file-tile">
+                <span class="file-info">brio.md <span class="size">– 19 KB</span></span>
+                <div class="actions">
+                  <button type="button" class="cta" id="copy-brio-btn" data-click="copyBrio">Copy</button>
+                  <a href="brio.md" class="cta" download="brio.md">Download</a>
+                  <a href="brio.md" class="cta" target="_blank" rel="noopener">View</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="snippet snippet-ai">
+        <div class="snippet-head">
+          <div class="snippet-ai-head">
+            <svg class="sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+              <path d="M5 21l1.5-2.5L9 18l-2.5-1.5L5 14l-1.5 2.5L1 18l2.5 1.5L5 21z"/>
+              <path d="M19 21l1.5-2.5L23 18l-2.5-1.5L19 14l-1.5 2.5L15 18l2.5 1.5L19 21z"/>
+            </svg>
+            <div>
+              <p class="snippet-desc">Choose only the modules you need and download a single <code>brio.js</code> file with no dead code.</p>
+              <div class="brio-file-tile">
+              <span class="file-info">brio.js <span class="size" id="home-bundle-size">– ~5 KB</span></span>
+                <div class="actions">
+                  <button type="button" class="cta" data-click="copyBundleScript">Copy</button>
+                <a href="brio.js" class="cta" download="brio.js">Download</a>
+                <a href="brio.js" class="cta" target="_blank" rel="noopener">View</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <div class="cta-wrap">
+    <a href="reference.html" class="cta">View all documentation →</a>
+  </div>
+
+    </main>
+  </div>
+
+<script src="../src/utils.js" defer></script>
+<script src="../src/actions.js" defer></script>
+<script src="builder.js" defer></script>
+</body>
+</html>

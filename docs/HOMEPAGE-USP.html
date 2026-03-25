@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brio — Why Brio</title>
+  <style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --surface:   #161616;
+      --border:    #252525;
+      --text:      #e8e4dc;
+      --body:      #a09890;
+      --code:      #8a8278;
+      --code-dim:  #484340;
+      --accent:    #c8b89a;
+      --green:     #7abf8e;
+      font-size: 15px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 900px;
+      padding: clamp(3rem, 8vw, 7rem) clamp(1.5rem, 5vw, 4rem) 6rem;
+    }
+
+
+    /* ─────────────────────────────────────────────────
+       Intro
+    ───────────────────────────────────────────────── */
+
+    .intro {
+      margin-bottom: clamp(3rem, 6vw, 5rem);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(2rem, 5vw, 4rem);
+      align-items: start;
+    }
+
+    .intro-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--code-dim);
+      margin-bottom: 1.25rem;
+    }
+
+    .intro-title {
+      font-size: clamp(1.5rem, 4vw, 2.1rem);
+      font-weight: normal;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .intro-body {
+      font-size: 0.875rem;
+      color: var(--body);
+      line-height: 1.8;
+    }
+
+    .intro-body strong {
+      color: var(--accent);
+      font-weight: normal;
+    }
+
+    .intro-code {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .intro-code pre {
+      padding: 1.4rem 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.77rem;
+      line-height: 1.8;
+      color: var(--code);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+
+    /* ─────────────────────────────────────────────────
+       USP grid
+    ───────────────────────────────────────────────── */
+
+    .section-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--code-dim);
+      margin-bottom: 2rem;
+    }
+
+    .usps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .usp {
+      background: var(--bg);
+      padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1.5rem, 3.5vw, 2.25rem);
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      transition: background 0.15s;
+    }
+
+    .usp:hover { background: var(--surface); }
+
+    .usp.wide {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: start;
+    }
+
+    .usp.wide .usp-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .usp.wide .usp-right {
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── Parts ── */
+
+    .usp-num {
+      font-family: 'Courier New', monospace;
+      font-size: 0.6rem;
+      color: var(--code-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .usp-title {
+      font-size: clamp(1rem, 2.2vw, 1.15rem);
+      font-weight: normal;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .usp-body {
+      font-size: 0.82rem;
+      color: var(--body);
+      line-height: 1.75;
+    }
+
+    .usp-body strong {
+      color: var(--accent);
+      font-weight: normal;
+    }
+
+    /* ── Code blocks ── */
+
+    .glimpse { width: 100%; }
+
+    .glimpse pre,
+    .intro-code pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      line-height: 1.75;
+      color: var(--code);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* Colour helpers — used in both intro and glimpse */
+    .a  { color: var(--accent); }
+    .g  { color: var(--green);  }
+    .t  { color: var(--text);   }
+    .d  { color: var(--code-dim); }
+
+    /* ── No-build pills ── */
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .pill {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--code);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.6rem;
+      border-radius: 2px;
+    }
+
+    .pill.strike {
+      text-decoration: line-through;
+      color: var(--code-dim);
+    }
+
+    .pill.ok { color: var(--green); border-color: var(--green); opacity: 0.8; }
+
+
+    /* ─────────────────────────────────────────────────
+       Responsive
+    ───────────────────────────────────────────────── */
+
+    @media (max-width: 680px) {
+      .intro        { grid-template-columns: 1fr; }
+      .usps         { grid-template-columns: 1fr; }
+      .usp.wide     { grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ─── Intro ─────────────────────────────────────────────────── -->
+
+  <div class="intro">
+    <div class="intro-left">
+      <p class="intro-label">Brio</p>
+      <h1 class="intro-title">Behaviour that lives in your HTML.</h1>
+      <p class="intro-body">Brio is a lightweight JavaScript framework for multi-page sites. Bind actions to elements with <strong>data-attributes</strong>, declare conditions directly in markup, and let the framework handle the wiring. No build step. No reactive state. Just HTML that does what it says.</p>
+    </div>
+    <div class="intro-code">
+      <pre>&lt;button <span class="a">data-click</span>=<span class="g">"addToCart(sku-912)"</span>&gt;
+  Add to cart
+&lt;/button&gt;
+
+&lt;div <span class="a">data-show-when</span>=<span class="g">"delivery==express"</span>&gt;
+  &lt;label&gt;Delivery time&lt;/label&gt;
+  &lt;input type=<span class="g">"text"</span> id=<span class="g">"slot"</span>&gt;
+&lt;/div&gt;
+
+<span class="t">function</span> <span class="a">addToCart</span>(el, event, <span class="g">target</span>) {
+}</pre>
+    </div>
+  </div>
+
+
+  <!-- ─── USPs ──────────────────────────────────────────────────── -->
+
+  <p class="section-label">Why Brio</p>
+
+  <div class="usps">
+
+    <!-- 01 — Conditional fields -->
+    <div class="usp wide">
+      <div class="usp-left">
+        <span class="usp-num">01</span>
+        <h2 class="usp-title">Declare conditions.<br>Don't write handlers.</h2>
+        <p class="usp-body">Show, hide, enable, or disable any element based on what the user selected — declared directly in HTML. <strong>data-show-when</strong>, <strong>data-hide-when</strong>, <strong>data-enable-when</strong>, <strong>data-disable-when</strong>. Brio evaluates them on every change. No event listener, no function, no wiring.</p>
+      </div>
+      <div class="usp-right">
+        <div class="glimpse">
+          <pre>&lt;select id=<span class="g">"account-type"</span>&gt;
+  &lt;option value=<span class="g">"personal"</span>&gt;Personal&lt;/option&gt;
+  &lt;option value=<span class="g">"business"</span>&gt;Business&lt;/option&gt;
+&lt;/select&gt;
+
+&lt;div <span class="a">data-show-when</span>=<span class="g">"account-type==business"</span>&gt;
+  &lt;label&gt;VAT number&lt;/label&gt;
+  &lt;input type=<span class="g">"text"</span> id=<span class="g">"vat"</span>&gt;
+&lt;/div&gt;
+
+&lt;button type=<span class="g">"submit"</span>
+  <span class="a">data-disable-when</span>=<span class="g">"plan==none"</span>&gt;Continue&lt;/button&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 — Dynamic binding -->
+    <div class="usp wide">
+      <div class="usp-left">
+        <span class="usp-num">02</span>
+        <h2 class="usp-title">Dynamic binding.<br>Declared, not coded.</h2>
+        <p class="usp-body">Point <strong>data-bind</strong> at a field with <strong>#id</strong>, or at any JavaScript object with dot notation. Mix both in a single template. Brio keeps every reference in sync — summaries, prices, translations — without a single event listener.</p>
+      </div>
+      <div class="usp-right">
+        <div class="glimpse">
+          <pre>&lt;button <span class="a">data-click</span>=<span class="g">"decrement(nights)"</span>&gt;−&lt;/button&gt;
+&lt;input id=<span class="g">"nights"</span> type=<span class="g">"number"</span> <span class="a">data-bind</span>=<span class="g">"{{#nights}}"</span>&gt;
+&lt;button <span class="a">data-click</span>=<span class="g">"increment(nights)"</span>&gt;+&lt;/button&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 — HTML declares, JS defines -->
+    <div class="usp">
+      <span class="usp-num">03</span>
+      <h2 class="usp-title">HTML declares.<br>JavaScript defines.</h2>
+      <p class="usp-body">The attribute names the action. Your function in <strong>project.js</strong> handles it. No logic in attributes, no markup in scripts — both sides stay readable on their own.</p>
+      <div class="glimpse">
+        <pre>&lt;button <span class="a">data-click</span>=<span class="g">"saveItem(draft)"</span>&gt;Save draft&lt;/button&gt;
+
+<span class="t">function</span> <span class="a">saveItem</span>(el, event, <span class="g">target</span>) {
+}</pre>
+      </div>
+    </div>
+
+    <!-- 04 — Accessible by design -->
+    <div class="usp">
+      <span class="usp-num">04</span>
+      <h2 class="usp-title">Accessible by design.<br>Not by effort.</h2>
+      <p class="usp-body">Brio uses ARIA as its operating language. <strong>aria-modal</strong> activates the focus trap. <strong>aria-expanded</strong> declares toggle state. Form errors announce as alerts. Correct semantics and working behaviour are the same thing.</p>
+      <div class="glimpse">
+        <pre>&lt;div id=<span class="g">"confirm"</span> <span class="a">aria-modal</span>=<span class="g">"true"</span> hidden&gt;
+  &lt;h2&gt;Delete this item?&lt;/h2&gt;
+  &lt;button <span class="a">data-click</span>=<span class="g">"closeDialog"</span>&gt;Cancel&lt;/button&gt;
+  &lt;button <span class="a">data-click</span>=<span class="g">"confirmDelete"</span>&gt;Delete&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;button <span class="a">data-click</span>=<span class="g">"toggle"</span> <span class="a">aria-expanded</span>=<span class="g">"false"</span>&gt;
+  Details
+&lt;/button&gt;</pre>
+      </div>
+    </div>
+
+    <!-- 05 — No dependencies, full width -->
+    <div class="usp wide">
+      <div class="usp-left">
+        <span class="usp-num">05</span>
+        <h2 class="usp-title">No dependencies.<br>No bundler. No build step.</h2>
+        <p class="usp-body">Brio is plain JavaScript files. Drop them into any project and they work. No toolchain to configure, no packages to maintain, no version conflicts to debug. Ships exactly as written.</p>
+        <div class="pills">
+          <span class="pill strike">npm install</span>
+          <span class="pill strike">webpack.config.js</span>
+          <span class="pill strike">package.json</span>
+          <span class="pill strike">node_modules</span>
+          <span class="pill strike">transpilation</span>
+        </div>
+      </div>
+      <div class="usp-right">
+        <div class="glimpse">
+          <pre>&lt;script defer src=<span class="g">"utils.js"</span>&gt;&lt;/script&gt;
+&lt;script defer src=<span class="g">"actions.js"</span>&gt;&lt;/script&gt;
+&lt;script defer src=<span class="g">"dialogs.js"</span>&gt;&lt;/script&gt;
+&lt;script defer src=<span class="g">"feedback.js"</span>&gt;&lt;/script&gt;</pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

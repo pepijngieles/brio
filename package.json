@@ -1,0 +1,26 @@
+{
+  "name": "brio-js",
+  "version": "0.1.0",
+  "description": "A lightweight, declarative JavaScript framework for multi-page websites and web apps. No build step, no dependencies.",
+  "keywords": [
+    "framework",
+    "declarative",
+    "data-attributes",
+    "no-build",
+    "vanilla-js",
+    "dialogs",
+    "forms",
+    "accessibility"
+  ],
+  "homepage": "https://github.com/pepijngieles/brio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pepijngieles/brio.git"
+  },
+  "license": "MIT",
+  "author": "Pepijn Gieles",
+  "files": [
+    "src/"
+  ],
+  "type": "module"
+}

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brio — LLM Adoption Analysis</title>
+  <style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0f0f0f;
+      --surface:    #1a1a1a;
+      --surface-2:  #1f1f1f;
+      --border:     #2a2a2a;
+      --text:       #e8e4dc;
+      --muted:      #7a7570;
+      --accent:     #c8b89a;
+      --accent-dim: #9a8a76;
+      --green:      #70b88a;
+      --red:        #e07878;
+      --yellow:     #c8a870;
+      --radius:     5px;
+      font-size: 15px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', serif;
+      line-height: 1.75;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      height: 52px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 clamp(1.25rem, 5vw, 3.5rem);
+      gap: 0.75rem;
+      z-index: 10;
+    }
+
+    .topbar-title {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .topbar-sub {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 5vw, 3.5rem) 6rem;
+    }
+
+    .eyebrow {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.4rem;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: normal;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.6rem;
+    }
+
+    .lead {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 620px;
+      margin-bottom: 3rem;
+      line-height: 1.75;
+    }
+
+    /* ── Verdict banner ── */
+    .verdict-banner {
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--yellow);
+      background: var(--surface);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .verdict-banner .label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 0.4rem;
+    }
+
+    .verdict-banner p {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* ── Sections ── */
+    h2 {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .section { margin-bottom: 3rem; }
+
+    p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 0.9rem;
+      line-height: 1.75;
+    }
+
+    p strong { color: var(--text); font-weight: normal; }
+
+    p code, li code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      color: var(--accent);
+      background: var(--surface);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    /* ── Comparison block ── */
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1.25rem 0 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+    }
+
+    .compare-col { background: var(--surface); padding: 1.1rem 1.2rem; }
+
+    .compare-col .col-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .compare-col ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .compare-col li {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .compare-col li .icon { flex-shrink: 0; margin-top: 0.05rem; }
+    .pro  { color: var(--green); }
+    .con  { color: var(--red); }
+
+    /* ── Code example ── */
+    .code-block {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1.25rem 0 1.5rem;
+    }
+
+    .code-label {
+      background: var(--surface-2);
+      padding: 0.4rem 0.85rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-block pre {
+      padding: 1rem 1.1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: var(--muted);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .code-block pre .hl   { color: var(--text); }
+    .code-block pre .dim  { opacity: 0.4; }
+    .code-block pre .good { color: var(--green); }
+    .code-block pre .warn { color: var(--yellow); }
+    .code-block pre .attr { color: var(--accent); }
+
+    /* ── Problem list ── */
+    .problem-list {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1.25rem 0 1.5rem;
+    }
+
+    .problem-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .problem-item:last-child { border-bottom: none; }
+
+    .problem-num {
+      background: var(--surface-2);
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .problem-content {
+      padding: 0.85rem 1.1rem;
+    }
+
+    .problem-title {
+      font-size: 0.875rem;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .problem-body {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .problem-body code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+      background: var(--surface-2);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    /* ── Fix cards ── */
+    .fix-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.25rem 0 1.5rem;
+    }
+
+    .fix-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+    }
+
+    .fix-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .fix-title {
+      font-size: 0.875rem;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .fix-body {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .fix-body code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+      background: var(--surface-2);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    .fix-card.priority {
+      border-color: var(--accent-dim);
+      background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    }
+
+    /* ── Callout ── */
+    .callout {
+      border-left: 3px solid var(--accent-dim);
+      background: var(--surface);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.25rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 1.25rem 0 1.5rem;
+    }
+
+    .callout strong { color: var(--text); }
+
+    .callout code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+      background: var(--surface-2);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    @media (max-width: 600px) {
+      .compare   { grid-template-columns: 1fr; }
+      .fix-grid  { grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="topbar-title">Brio</span>
+  <span class="topbar-sub">— LLM adoption analysis</span>
+</header>
+
+<div class="page">
+
+  <div class="eyebrow">Strategic analysis</div>
+  <h1>Would an LLM use Brio?</h1>
+  <p class="lead">Assuming tabs, accordions, and other missing patterns are implemented — what stands between Brio and genuine LLM adoption? And what would it take to change that?</p>
+
+  <div class="verdict-banner">
+    <div class="label">Verdict</div>
+    <p><strong>Not by default. Conditionally yes, if properly set up.</strong> An LLM encountering Brio cold — no docs in context, no instructions — will not use it. It will reach for Alpine.js, vanilla JS, or whatever framework dominates its training data. But an LLM given Brio's docs in context, especially in a well-structured format, is well-positioned to use Brio correctly. The pattern is learnable, small, and consistent. The problem is not capability — it's discoverability and context.</p>
+  </div>
+
+
+  <!-- ── Why not by default ─────────────────────────────────────────── -->
+
+  <div class="section">
+    <h2>Why it won't happen by default</h2>
+
+    <p><strong>The training data problem is the whole game.</strong> When an LLM generates code, it works from patterns it has seen thousands of times. React, Alpine.js, vanilla JS event listeners, Bootstrap modals — these appear across millions of repositories, tutorials, and Stack Overflow answers. Brio appears in none of them. The LLM has no instinct for it, no examples to draw from, no muscle memory. Even if asked to "build a modal," it will generate what it knows.</p>
+
+    <p>This is not fixable by improving the framework. It is only fixable by getting Brio's patterns into the LLM's context window at the moment of code generation. The docs have to travel with the project.</p>
+
+    <p>This is actually the same problem every new framework faces — but established frameworks solved it by accumulating years of training data. Brio has to solve it differently: by being intentionally designed for inference-time adoption.</p>
+  </div>
+
+
+  <!-- ── What works in Brio's favour ────────────────────────────────── -->
+
+  <div class="section">
+    <h2>What works in Brio's favour</h2>
+
+    <p>Once the docs are in context, Brio is surprisingly well-suited to LLM code generation. Several of its design decisions — made for human developers — turn out to be equally good for machines.</p>
+
+    <div class="compare">
+      <div class="compare-col">
+        <div class="col-label">Brio advantages for LLMs</div>
+        <ul>
+          <li><span class="icon pro">✓</span> Declarative pattern is deterministic — <code>data-click="fn(target)"</code> has one correct interpretation</li>
+          <li><span class="icon pro">✓</span> Small API — maybe 20 attributes and a handful of functions. An LLM can hold the whole thing in context</li>
+          <li><span class="icon pro">✓</span> No build step — LLM doesn't need to generate webpack config, package.json, tsconfig</li>
+          <li><span class="icon pro">✓</span> Consistent conventions — the pattern generalises. Once an LLM knows one Brio attribute, it can extrapolate</li>
+          <li><span class="icon pro">✓</span> Readable generated HTML — LLM output is auditable; attributes signal intent</li>
+          <li><span class="icon pro">✓</span> Function names as actions — <code>data-click="openDialog(settings)"</code> reads like plain English to an LLM</li>
+        </ul>
+      </div>
+      <div class="compare-col">
+        <div class="col-label">Alpine.js advantages for LLMs</div>
+        <ul>
+          <li><span class="icon pro">✓</span> Millions of training examples in the LLM's weights already</li>
+          <li><span class="icon pro">✓</span> Self-contained — logic and markup in one place, easier to generate as a single unit</li>
+          <li><span class="icon pro">✓</span> Inline expressions — LLM can write <code>x-show="open"</code> without needing a separate JS file</li>
+          <li><span class="icon pro">✓</span> No scaffolding requirements — no portal, no dim layer, no page-content wrapper</li>
+          <li><span class="icon pro">✓</span> LLM already knows which JS it can use — full inline JS expressions</li>
+        </ul>
+      </div>
+    </div>
+
+    <p><strong>The deeper advantage:</strong> Brio's separation of HTML and JS — which can feel like extra work to a human — actually maps well to how LLMs naturally generate code. An LLM can write the HTML structure first, then write the corresponding functions, with clear one-to-one correspondence between <code>data-click="saveItem"</code> and <code>function saveItem(el, event, target) {}</code>. The handshake is explicit.</p>
+  </div>
+
+
+  <!-- ── The four real blockers ──────────────────────────────────────── -->
+
+  <div class="section">
+    <h2>The four real blockers</h2>
+
+    <p>These are not theoretical — they are specific failure modes an LLM will hit when trying to use Brio without sufficient context.</p>
+
+    <div class="problem-list">
+
+      <div class="problem-item">
+        <div class="problem-num">1</div>
+        <div class="problem-content">
+          <div class="problem-title">The invisible scaffolding problem</div>
+          <p class="problem-body">Dialogs now require native <code>&lt;dialog id="..."&gt;</code> markup plus a matching action target. An LLM that uses a plain <code>&lt;div&gt;</code> or mismatched id will create dialog-like HTML that Brio cannot open. This is still a likely failure mode without docs in context, but the markup contract is now much smaller and fully native.</p>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-num">2</div>
+        <div class="problem-content">
+          <div class="problem-title">The function signature problem</div>
+          <p class="problem-body">Every action function must have the signature <code>function myAction(el, event, target) {}</code>. An LLM that guesses will probably write <code>function myAction() {}</code> or <code>function myAction(event) {}</code> — both common in vanilla JS. The first misses the target argument; the second gets <code>el</code> when it expects <code>event</code>. Both break silently. The LLM has no equivalent in its training data to pattern-match from, so it has to be explicitly told.</p>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-num">3</div>
+        <div class="problem-content">
+          <div class="problem-title">The "what functions exist" problem</div>
+          <p class="problem-body">Brio exposes a set of built-in functions — <code>openDialog</code>, <code>closeDialog</code>, <code>toggle</code>, <code>showMessage</code>, <code>readServerMessages</code>, etc. An LLM that doesn't know these exist will invent its own versions, or use Alpine-style patterns. It needs to know what's already available before it decides what to write. The docs list these functions, but discoverability still depends on delivering that reference in the LLM context.</p>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-num">4</div>
+        <div class="problem-content">
+          <div class="problem-title">The server contract problem</div>
+          <p class="problem-body">The <code>readServerMessages()</code> function expects a specific JSON shape: <code>{ success: bool, messages: [{ field, message, type }] }</code>. An LLM generating a form handler will probably use its own convention — returning <code>{ error: "..." }</code> or <code>{ status: "ok" }</code> — and the feedback system will silently receive the response and do nothing. This is a cross-file contract that the LLM has to know about when generating both the frontend HTML and whatever backend endpoint it's wiring up.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ── The two-file coordination issue ──────────────────────────────── -->
+
+  <div class="section">
+    <h2>The two-file coordination issue</h2>
+
+    <p>This deserves its own section because it is structurally different from the problems above. With Alpine, an LLM writes everything in one place — the HTML attribute contains the logic. With Brio, the LLM must generate two coordinated artefacts: the HTML attribute, and the JS function in <code>project.js</code>. These must match exactly.</p>
+
+    <div class="code-block">
+      <div class="code-label">What the LLM must generate and keep in sync</div>
+      <pre><span class="dim"><!-- In the HTML --></span>
+&lt;button <span class="attr">data-click</span>=<span class="good">"saveItem(item-123)"</span>&gt;Save&lt;/button&gt;
+
+<span class="dim">// In project.js — must know this is needed, and know the signature</span>
+<span class="hl">function</span> saveItem(<span class="attr">el</span>, <span class="attr">event</span>, <span class="attr">target</span>) {
+  <span class="dim">// target === 'item-123' — must know this is how target arrives</span>
+  <span class="dim">// el === the button element</span>
+  <span class="dim">// event === the click event</span>
+}</pre>
+    </div>
+
+    <p>For simple generation tasks this is fine — the LLM can write both. The risk is in partial context: if an LLM is asked to "add a save button" to existing HTML without being given the <code>project.js</code> file, it will generate the HTML attribute correctly, but won't know whether <code>saveItem</code> already exists or needs to be created. It may silently generate duplicate or conflicting functions.</p>
+
+    <p><strong>The fix is documentation, not framework change.</strong> The convention "always show both sides of the HTML/JS pair in every example" makes this easy. The LLM learns to think of them as a unit.</p>
+  </div>
+
+
+  <!-- ── What needs to change ───────────────────────────────────────── -->
+
+  <div class="section">
+    <h2>What needs to change</h2>
+
+    <p>Most of these are documentation and distribution decisions, not runtime changes.</p>
+
+    <div class="fix-grid">
+
+      <div class="fix-card priority">
+        <div class="fix-label">Priority 1 — Context delivery</div>
+        <div class="fix-title">An LLM system prompt snippet</div>
+        <div class="fix-body">A single dense Markdown file — under 2000 tokens — that covers: load order, all data-attributes, function signature, built-in functions, dialog scaffolding, server contract. Designed to be pasted into a system prompt or dropped into a <code>.cursorrules</code> / <code>CLAUDE.md</code> file. This is the single highest-leverage deliverable. Every Brio project that includes it gets LLM support for free.</div>
+      </div>
+
+      <div class="fix-card priority">
+        <div class="fix-label">Priority 1 — Docs format</div>
+        <div class="fix-title">A Markdown version of the docs + llms.txt</div>
+        <div class="fix-body">The docs HTML is excellent for humans; a markdown companion remains better for LLM ingestion. A <code>DOCS.md</code> companion — same content, plain Markdown — combined with a <code>llms.txt</code> file on the Brio site lets coding assistants (Cursor, Windsurf, Claude, Copilot) load the right docs automatically. This is now an established convention with real adoption at Anthropic, Vercel, Cloudflare.</div>
+      </div>
+
+      <div class="fix-card">
+        <div class="fix-label">Priority 2 — Example completeness</div>
+        <div class="fix-title">Every example shows both sides</div>
+        <div class="fix-body">Every code example in the docs should show the HTML attribute AND the JS function it calls, in the same block. Currently some examples show only the HTML side. An LLM learning Brio from the docs will miss the connection if it only ever sees one half of the pair.</div>
+      </div>
+
+      <div class="fix-card">
+        <div class="fix-label">Priority 2 — Scaffolding</div>
+        <div class="fix-title">A canonical starter template</div>
+        <div class="fix-body">A complete, minimal <code>index.html</code> that has the correct load order and a canonical native <code>&lt;dialog&gt;</code> example — pre-wired. When an LLM is asked to "start a new Brio project," this is what it should output verbatim. It eliminates the invisible scaffolding problem entirely.</div>
+      </div>
+
+      <div class="fix-card">
+        <div class="fix-label">Priority 3 — Discoverability</div>
+        <div class="fix-title">Built-in function reference table</div>
+        <div class="fix-body">A compact table in the docs (and the system prompt snippet) listing every built-in action by name — <code>openDialog</code>, <code>toggle</code>, <code>showMessage</code>, etc. — with a one-line description of each. Prevents the LLM from inventing things Brio already handles.</div>
+      </div>
+
+      <div class="fix-card">
+        <div class="fix-label">Priority 3 — Server contract</div>
+        <div class="fix-title">The JSON contract as a copy-paste block</div>
+        <div class="fix-body">A clearly labelled, copy-paste-ready JSON example of the server response format — in the docs, in the starter template comments, and in the system prompt snippet. Every LLM generating a backend endpoint needs to see this before it invents its own format.</div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ── The honest comparison ──────────────────────────────────────── -->
+
+  <div class="section">
+    <h2>The honest comparison</h2>
+
+    <p>Right now, if you ask an LLM to "build a contact form with a confirmation modal," here is what happens:</p>
+
+    <div class="code-block">
+      <div class="code-label">With Alpine.js — LLM has everything it needs in its weights</div>
+      <pre>&lt;div x-data="<span class="good">{ open: false }</span>"&gt;
+  &lt;button @click="<span class="good">open = true</span>"&gt;Submit&lt;/button&gt;
+  &lt;div x-show="<span class="good">open</span>"&gt;
+    &lt;p&gt;Confirmed!&lt;/p&gt;
+    &lt;button @click="<span class="good">open = false</span>"&gt;Close&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+<span class="dim">// No separate JS file needed. LLM generates this confidently, correctly.</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">With Brio — LLM has nothing in its weights, must guess</div>
+      <pre><span class="warn">// LLM likely generates some of these correctly, some incorrectly:</span>
+&lt;button data-click="<span class="good">openDialog(confirm)</span>"&gt;Submit&lt;/button&gt;
+
+<span class="warn">// Probably missing — LLM doesn't know this is required:</span>
+&lt;dialog id="<span class="warn">confirm</span>"&gt;...&lt;/dialog&gt;
+
+<span class="warn">// still required: id must match data-click="openDialog(confirm)"</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">With Brio + system prompt snippet — LLM has what it needs</div>
+      <pre><span class="good">// Generates correctly, confidently, completely</span>
+&lt;button data-click="openDialog(confirm)"&gt;Submit&lt;/button&gt;
+
+&lt;dialog id="confirm"&gt;
+  &lt;h2&gt;Confirmed!&lt;/h2&gt;
+  &lt;button data-el="close-button" data-click="closeDialog(confirm)"&gt;Close&lt;/button&gt;
+&lt;/dialog&gt;</pre>
+    </div>
+  </div>
+
+
+  <!-- ── Bottom line ─────────────────────────────────────────────────── -->
+
+  <div class="section">
+    <h2>Bottom line</h2>
+
+    <p><strong>Brio's design is well-suited to LLM code generation.</strong> It is small, consistent, and explicit. An LLM that knows the pattern produces clean, correct, readable output — arguably cleaner than Alpine because the logic stays in JS where an LLM can reason about it, and the HTML stays declarative where a human can read it.</p>
+
+    <p><strong>The remaining gap is mostly contextual.</strong> The LLM needs to be handed the right information at the right moment. That means: a system prompt snippet, a Markdown docs file, and a starter template. These three assets create reliable default behavior in AI-assisted workflows.</p>
+
+    <p><strong>The opportunity is real.</strong> The trend in LLM-assisted development is toward smaller, more focused tools — not away from them. An LLM working within a Brio project, given the system prompt snippet, will likely produce better results than an LLM working with Alpine, because Brio's constraints reduce the surface area for mistakes. The framework does the accessibility work. The server contract is defined. The scaffolding is fixed. There are fewer decisions for the LLM to make, and fewer of them wrong.</p>
+
+    <div class="callout">
+      <strong>The single most important thing to build:</strong> a <code>brio.md</code> file — under 2000 tokens — designed to be dropped into any AI coding assistant's context. When a developer adds that file to their project, every subsequent LLM interaction with Brio code becomes correct by default. That file is more valuable than any documentation page, because it travels with the code.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
