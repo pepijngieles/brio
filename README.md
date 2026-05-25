@@ -17,18 +17,36 @@ HTML declares *what* happens. JavaScript defines *how*. When you scan the HTML, 
 
 | File | What it does |
 |---|---|
+| `brio.js` | **Bundled core** — all modules below, built via `npm run build` |
 | `utils.js` | DOM, string, number, URL, storage, date, network helpers + dynamic field conditions |
 | `actions.js` | Event delegation — the core dispatcher |
 | `binding.js` | Reactive state, `data-bind` / `data-bind-*`, no-refresh form patching |
 | `dialogs.js` | Native `<dialog>` open/close, focus return, dismissal policy |
 | `feedback.js` | Inline messages for client-side and server-side feedback |
 | `brio.css` | Functional baseline for dialog, hidden, feedback, and loading states |
+| `project.js` | Your action functions (not part of the library) |
 
 ## Getting started
 
-### Option A — modular files (recommended for projects)
+### Option A — bundled (default)
 
-Add the core files, the functional baseline CSS, and your own `project.js` to your page:
+```html
+<link rel="stylesheet" href="brio.css">
+<script src="brio.js" defer></script>
+<script src="project.js" defer></script>
+```
+
+Download `brio.js` from the repo root, or use the CDN:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/dist/brio.css">
+<script src="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/brio.js" defer></script>
+<script src="project.js" defer></script>
+```
+
+### Option B — modular files (vendoring)
+
+Copy `src/*.js` into your project (same order as inside `brio.js`):
 
 ```html
 <link rel="stylesheet" href="brio.css">
@@ -38,14 +56,6 @@ Add the core files, the functional baseline CSS, and your own `project.js` to yo
 <script src="dialogs.js"  defer></script>
 <script src="feedback.js" defer></script>
 <script src="project.js"  defer></script>
-```
-
-### Option B — CDN bundle
-
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/dist/brio.css">
-<script src="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/brio.js" defer></script>
-<script src="project.js" defer></script>
 ```
 
 `brio.css` keeps behavior-driven UI states (dialogs, hidden elements, feedback messages, loading buttons) functional by default, while your project CSS remains in control of visual design.

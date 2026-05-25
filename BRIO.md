@@ -4,6 +4,18 @@ Lightweight declarative JS for multi-page sites. HTML declares *what*; JS define
 
 ## Load order
 
+**Default — single bundle** (download, CDN, or copy `brio.js` from the repo root):
+
+```html
+<link rel="stylesheet" href="brio.css">
+<script src="brio.js" defer></script>
+<script src="project.js" defer></script>
+```
+
+`brio.js` contains all core modules in the correct order (`utils` → `actions` → `binding` → `dialogs` → `feedback`). Regenerate with `npm run build` after editing `src/*.js`.
+
+**Alternative — modular files** (vendoring into a project, e.g. `assets/brio/`):
+
 ```html
 <link rel="stylesheet" href="brio.css">
 <script src="utils.js"    defer></script>
@@ -14,7 +26,7 @@ Lightweight declarative JS for multi-page sites. HTML declares *what*; JS define
 <script src="project.js"  defer></script>
 ```
 
-Or bundled: `<script src="brio.js" defer></script>` + `brio.css`.
+All scripts require `defer` or placement before `</body>`. `project.js` must come last.
 
 ## Action function signature
 

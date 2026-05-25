@@ -15,9 +15,24 @@ HTML declares *what* happens. JavaScript defines *how*. When you scan the HTML, 
 
 ## Files and load order
 
-Always load in this order:
+### Default — `brio.js` bundle
+
+`npm run build` concatenates all core modules into a single `brio.js` (order: utils → actions → binding → dialogs → feedback). This is the recommended include for most projects:
 
 ```html
+<link rel="stylesheet" href="brio.css">
+<script src="brio.js" defer></script>
+<script src="project.js" defer></script>
+```
+
+All scripts require `defer` or placement before `</body>`. `project.js` must come last — it defines action functions the library calls at runtime.
+
+### Alternative — modular `src/` files
+
+Vendoring individual files (e.g. into `assets/brio/`) uses the same internal order:
+
+```html
+<link rel="stylesheet" href="brio.css">
 <script src="utils.js"    defer></script>
 <script src="actions.js"  defer></script>
 <script src="binding.js"  defer></script>
@@ -26,12 +41,9 @@ Always load in this order:
 <script src="project.js"  defer></script>
 ```
 
-All files require `defer` or placement before `</body>`.
-
-`project.js` must come last because it calls functions defined in the other files. The order of the four core files is otherwise flexible — each one checks `typeof fn === 'function'` before calling across file boundaries.
-
 | File | Responsibility |
 |---|---|
+| `brio.js` | Bundled core — equivalent to all rows below |
 | `utils.js` | DOM, string, number, URL, storage, date, network helpers + dynamic form fields |
 | `actions.js` | Event delegation framework — the core dispatcher |
 | `binding.js` | Reactive state store, `data-bind`/`data-bind-*`, no-refresh patch helpers |

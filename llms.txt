@@ -11,7 +11,22 @@
 
 ## Install
 
-Modular (recommended for projects):
+**Default — bundled** (CDN or copy from repo):
+
+```html
+<link rel="stylesheet" href="brio.css">
+<script src="brio.js" defer></script>
+<script src="project.js" defer></script>
+```
+
+CDN:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/dist/brio.css">
+<script src="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/brio.js" defer></script>
+```
+
+**Alternative — modular** (vendoring `src/*.js` into your project):
 
 ```html
 <link rel="stylesheet" href="brio.css">
@@ -21,11 +36,4 @@ Modular (recommended for projects):
 <script src="dialogs.js" defer></script>
 <script src="feedback.js" defer></script>
 <script src="project.js" defer></script>
-```
-
-CDN (bundled):
-
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/dist/brio.css">
-<script src="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/brio.js" defer></script>
 ```

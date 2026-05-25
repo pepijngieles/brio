@@ -783,7 +783,15 @@
       <span class="section-anchor" aria-hidden="true"></span>
       <div class="section-label">Overview</div>
       <h2>Load order</h2>
-      <p class="intro">All scripts require <code>defer</code> or placement before <code>&lt;/body&gt;</code>.</p>
+      <p class="intro">All scripts require <code>defer</code> or placement before <code>&lt;/body&gt;</code>. <code>project.js</code> must come last.</p>
+
+      <p class="intro"><strong>Default — bundled.</strong> <code>brio.js</code> contains all core modules (built via <code>npm run build</code>):</p>
+
+      <pre><code><span class="t-tag">&lt;link</span> <span class="t-attr">rel</span>=<span class="t-val">"stylesheet"</span> <span class="t-attr">href</span>=<span class="t-val">"brio.css"</span><span class="t-tag">&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"brio.js"</span> <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
+<span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"project.js"</span> <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span></code></pre>
+
+      <p class="intro"><strong>Alternative — modular files</strong> (vendoring <code>src/*.js</code> into your project):</p>
 
       <pre><code><span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"utils.js"</span>    <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
 <span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"actions.js"</span>  <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
@@ -792,12 +800,11 @@
 <span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"feedback.js"</span> <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span>
 <span class="t-tag">&lt;script</span> <span class="t-attr">src</span>=<span class="t-val">"project.js"</span>  <span class="t-attr">defer</span><span class="t-tag">&gt;&lt;/script&gt;</span></code></pre>
 
-      <p><code>project.js</code> must come last — it calls functions defined in the other files. The order of the four core files is otherwise flexible; each checks <code>typeof fn === 'function'</code> before calling across file boundaries.</p>
-
       <div class="table-wrap">
         <table>
           <thead><tr><th>File</th><th>Responsibility</th></tr></thead>
           <tbody>
+            <tr><td>brio.js</td><td>Bundled core — all modules below, in order</td></tr>
             <tr><td>utils.js</td><td>DOM, string, number, URL, storage, date, network helpers + dynamic field conditions</td></tr>
             <tr><td>actions.js</td><td>Event delegation — the core dispatcher</td></tr>
             <tr><td>binding.js</td><td>Reactive state, data-bind/data-bind-*, no-refresh response patches</td></tr>
@@ -1535,11 +1542,7 @@ window.addEventListener(<span class="t-val">'scroll'</span>, onScroll);</code></
 </template>
 
 
-<script src="../src/utils.js" defer></script>
-<script src="../src/actions.js" defer></script>
-<script src="../src/binding.js" defer></script>
-<script src="../src/dialogs.js" defer></script>
-<script src="../src/feedback.js" defer></script>
+<script src="../brio.js" defer></script>
 <script defer>
   // ── Demo action functions for live demos on this page ───────────────────
   window.ui = { greeting: 'Welcome back', instruction: 'Changes are saved automatically.', saveButton: 'Save' };
