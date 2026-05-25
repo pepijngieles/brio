@@ -26,7 +26,7 @@ HTML declares *what* happens. JavaScript defines *how*. When you scan the HTML, 
 
 ## Getting started
 
-Load the individual core files in this order:
+### Option A — modular files (recommended for projects)
 
 Add the core files, the functional baseline CSS, and your own `project.js` to your page:
 
@@ -38,6 +38,14 @@ Add the core files, the functional baseline CSS, and your own `project.js` to yo
 <script src="dialogs.js"  defer></script>
 <script src="feedback.js" defer></script>
 <script src="project.js"  defer></script>
+```
+
+### Option B — CDN bundle
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/dist/brio.css">
+<script src="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/brio.js" defer></script>
+<script src="project.js" defer></script>
 ```
 
 `brio.css` keeps behavior-driven UI states (dialogs, hidden elements, feedback messages, loading buttons) functional by default, while your project CSS remains in control of visual design.
@@ -102,10 +110,25 @@ showMessage('email', 'Please enter a valid email.', 'error');
 <button data-key="Ctrl+s" data-click="save">Save</button>
 ```
 
+**No-refresh forms** — submit without page reload:
+
+```html
+<form id="contact-form" action="/api/contact" method="post" data-fetch novalidate>
+  <div data-message hidden></div>
+  <input id="email" name="email" type="email">
+  <span data-message data-for="email" hidden></span>
+  <button type="submit">Send</button>
+</form>
+```
+
+The form must have an `id`. Server returns `{ "success": true, "messages": [...] }`.
+
 ## Documentation
 
-- **[Full API reference (Markdown)](docs/brio.md)** — complete documentation of every attribute, function, and convention; copy into your project as `brio.md` so Cursor (or other AI assistants) have the full API in context
-- **[Interactive reference](docs/reference.html)** — same content as a browsable site with sidebar and live demos
+- **[BRIO.md](BRIO.md)** — condensed reference for AI assistants (copy into `.cursorrules` / `CLAUDE.md`)
+- **[Full API reference (Markdown)](docs/brio.md)** — complete documentation of every attribute, function, and convention
+- **[Interactive reference](docs/reference.html)** — browsable site with sidebar and live demos
+- **[llms.txt](llms.txt)** — LLM tooling index
 
 ## License
 

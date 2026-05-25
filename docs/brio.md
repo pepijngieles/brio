@@ -330,9 +330,72 @@ Adds reactivity primitives on top of Brio actions.
 
 - `data-bind` updates `textContent`
 - `data-bind-*` updates attributes/properties (`href`, `src`, `value`, `disabled`, `hidden`, etc.)
-- `BRIO_API` exposes `setState`, `getState`, and `refreshBindings`
-- `BRIO_API.applyResponse(data, form?)` applies `state`/`patches`/`append` payloads programmatically
+- `BRIO_API` is the **canonical public API** (see below)
 - `data-fetch` submit responses may return `state`, `patches`, and `append` for no-refresh UI updates
+
+### data-fetch forms
+
+Add `data-fetch` to a `<form>` to intercept submit via fetch (no page reload). Brio reads native `action` and `method`.
+
+**Requirements:**
+
+- Form must have an `id` — `enableForm(formId)` needs it to re-enable after submit
+- Use `novalidate` when handling validation server-side (or in a custom submit handler)
+- Optional: `data-fetch-append-target="#list-id"` — shorthand for append target inside the form
+
+```html
+<form id="comment-form" action="/comment" method="post" data-fetch novalidate
+      data-fetch-append-target="#comment-list">
+  <div data-message hidden></div>
+  <ul id="comment-list"></ul>
+  <input name="body" type="text">
+  <button type="submit">Send</button>
+</form>
+
+<template id="tpl-comment-row">
+  <li><span data-bind="body"></span> <time data-bind="time"></time></li>
+</template>
+```
+
+On submit: form disables automatically; response is parsed as JSON; form re-enables on completion or error.
+
+### Server response extensions
+
+Beyond `{ success, messages }`, responses may include:
+
+```json
+{
+  "success": true,
+  "messages": [],
+  "state": { "ui": { "label": "Saved" } },
+  "append": [
+    {
+      "target": "#comment-list",
+      "template": "tpl-comment-row",
+      "items": [{ "body": "Hello", "time": "12:00" }]
+    }
+  ]
+}
+```
+
+**Preferred: template append** — server returns `template` (id of a `<template>` on the page) + `items` (array of data objects). Brio clones the template, binds each item, and appends. Safe and maintainable.
+
+**Advanced: raw HTML** — `append` or `patches` with an `html` property inserts trusted server HTML. Brio does **not** sanitize by default. Only use with HTML you control. For untrusted content, call `configureSanitizeHtml(fn)` first.
+
+### BRIO_API
+
+```js
+BRIO_API.setState(partial)       // merge into Brio state, refresh bindings
+BRIO_API.getState(path?)         // read state (dot path optional)
+BRIO_API.refreshBindings(scope?) // re-evaluate data-bind expressions
+BRIO_API.applyResponse(data, form?) // apply full server payload programmatically
+BRIO_API.registerAfterFetch(fn)  // hook after successful data-fetch
+configureAuth(fn)                // Bearer token for getData
+configureTranslations(obj)       // { today, yesterday } for getRelativeDate
+configureSanitizeHtml(fn)        // sanitizer for patches/append HTML
+```
+
+Deprecated aliases (still work, prefer `BRIO_API`): `setBrioState`, `getBrioState`, `window.brioAfterFetch`.
 
 Security baseline for bind attributes:
 
@@ -342,6 +405,38 @@ Security baseline for bind attributes:
 ## dialogs.js
 
 Manages native `<dialog>` elements. Brio keeps declarative action wiring, focus return, and dismissal policy.
+
+### Official dialog structure contract
+
+Use this structure as the default for Brio-powered dialogs:
+
+```html
+<dialog class="dialog-sheet" id="example-dialog" aria-labelledby="example-dialog-title">
+  <div class="panel">
+    <header class="header">
+      <h2 id="example-dialog-title">Title</h2>
+    </header>
+    <div class="content">
+      ...
+    </div>
+    <footer>
+      ...
+    </footer>
+  </div>
+</dialog>
+```
+
+Functional responsibilities:
+- `dialog.dialog-sheet`: viewport sizing/positioning and containment
+- `dialog .panel`: vertical layout container
+- `dialog .content`: scrolling area
+- `dialog footer`: action row container
+
+Project/theme CSS may style visuals (spacing, typography, colors), but should not replace these functional responsibilities.
+
+### Sync direction (library vs projects)
+
+Brio library is the source of truth for functional behavior and baseline CSS contracts. Project copies (such as Nestje) may add theme-specific styling, but should periodically re-sync `utils.js`, `actions.js`, `binding.js`, `dialogs.js`, `feedback.js`, and `brio.css` from library to avoid drift.
 
 ```html
 <dialog id="confirm" aria-labelledby="confirm-title">

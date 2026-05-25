@@ -4,7 +4,27 @@ Native attributes (`required`, `min`, `max`, `pattern`, `action`, `method`) are 
 
 ---
 
-## Priority overview
+## v0.1.0 — shipped (2026-05-25)
+
+Core library, reactivity, data-fetch, brio.css baseline, init validation, BRIO.md, llms.txt, GitHub release + jsDelivr CDN.
+
+See [CHANGELOG.md](../CHANGELOG.md) for full release notes.
+
+---
+
+## v0.2 backlog (next)
+
+- **Forms:** dirty state, autosave, multi-step, optional client-side validation helper
+- **Developer experience:** `BRIO_DEBUG`, troubleshooting guide, docs split (Guide vs Reference)
+- **Distribution:** npm publish, bundle builder HTML, starter template
+- **Performance:** `updateDynamicFields` dependency map
+- **Dialogs:** animation states, dirty-leave on dialog close
+- **UI patterns:** toast, copy-to-clipboard, sortable lists, dark mode toggle
+- **Marketing:** homepage USP polish, logo/wordmark, TypeScript `.d.ts`
+
+---
+
+## Priority overview (historical — pre-v0.1)
 - **P0 — Now (foundational)**
   - Distribution & configuration core (custom bundle builder, `BRIO_API`, debug, init-time HTML validation)
   - Forms — submission, validation, dirty state, autosave, basic multi-step
@@ -25,20 +45,20 @@ Native attributes (`required`, `min`, `max`, `pattern`, `action`, `method`) are 
 
 ## Distribution & configuration
 - [x] Custom bundle builder — docs page with checkbox per module; download single .js containing only selected modules (`docs/builder.html`).
-- [ ] Separate `window.BRIO_API` namespace for calling public methods (e.g. `BRIO_API.resetDirty(formEl)`).
+- [x] `window.BRIO_API` namespace for calling public methods (`setState`, `getState`, `refreshBindings`, `applyResponse`, `registerAfterFetch`).
 - [ ] Debug mode — `window.BRIO_DEBUG = true` logs every dispatch, dialog transition, focus move, ARIA injection.
-- [ ] Init-time HTML validation on `DOMContentLoaded`:
-  - [ ] Every dialog action target resolves to an existing `<dialog id="...">`.
-  - [ ] Every `[data-message][data-for]` points to an existing input id.
-  - [ ] Every `data-click` action resolves to a known function.
-  - [ ] Log clear console warnings for each missing piece.
-- [ ] Pluggable authentication for `getData`/`postData` — e.g. `configureAuth(fn)` hook so projects can centralise JWT, CSRF, cookie, or Basic auth.
+- [x] Init-time HTML validation on `DOMContentLoaded`:
+  - [x] Every dialog action target resolves to an existing `<dialog id="...">`.
+  - [x] Every `[data-message][data-for]` points to an existing input id.
+  - [x] Every `data-click` action resolves to a known function.
+  - [x] `form[data-fetch]` without `id` warns; invalid `data-fetch-append-target` warns.
+- [x] Pluggable authentication for `getData` — `configureAuth(fn)` hook (legacy `jwtToken` fallback).
 - [ ] Module list table in docs — each module and what it provides.
-- [ ] CDN-hosted canonical URL for `brio.js`.
-- [ ] Versioned releases with changelog.
+- [x] CDN-hosted canonical URL for `brio.js` (jsDelivr via GitHub tags).
+- [x] Versioned releases with changelog.
 - [ ] `npm publish` as `brio-js` for teams that prefer a package reference.
-- [ ] `BRIO.md` system prompt snippet ≤2000 tokens — attributes, function signature, server contract — for `.cursorrules` / `CLAUDE.md`.
-- [ ] `DOCS.md` + `llms.txt` — markdown reference for LLM tooling integration.
+- [x] `BRIO.md` system prompt snippet ≤2000 tokens — attributes, function signature, server contract — for `.cursorrules` / `CLAUDE.md`.
+- [x] `llms.txt` — markdown reference for LLM tooling integration.
 - [ ] Canonical starter template — pre-wired scaffolding with native `<dialog>` examples.
 
 ---
@@ -53,33 +73,33 @@ Native attributes (`required`, `min`, `max`, `pattern`, `action`, `method`) are 
   - [x] Keep loading/accessibility contract (`data-state="loading"`, `aria-busy`, `aria-disabled`) intact in no-refresh flow.
 - **P1**
   - [ ] Add richer list templating docs and keyed update guidance for larger collections.
-  - [ ] Add explicit security guidance for HTML patches (`patches` / `append`) in docs.
+  - [x] Add explicit security guidance for HTML patches (`patches` / `append`) in docs.
   - [ ] Add advanced examples combining dialogs + fetch + binding + list append.
 
 ---
 
 ## `brio.css` v0.1 (functional baseline)
 - **P0**
-  - [ ] Add `dist/brio.css` baseline selectors for `dialog`, `dialog[open]`, `dialog::backdrop`, `dialog[data-modeless][open]`.
-  - [ ] Add `[hidden] { display: none !important; }` fallback.
-  - [ ] Add feedback baseline for `[data-message][hidden]` and a lightweight `[data-message][data-type]` state hook.
-  - [ ] Add loading baseline for `button[data-state="loading"]` and submit-input equivalent.
-  - [ ] Include optional CSS vars with working defaults (no overrides required).
+  - [x] Add `dist/brio.css` baseline selectors for `dialog`, `dialog[open]`, `dialog::backdrop`, `dialog[data-modeless][open]`.
+  - [x] Add `[hidden] { display: none !important; }` fallback.
+  - [x] Add feedback baseline for `[data-message][hidden]` and a lightweight `[data-message][data-type]` state hook.
+  - [x] Add loading baseline for `button[data-state="loading"]` and submit-input equivalent.
+  - [x] Include optional CSS vars with working defaults (no overrides required).
 - **P1**
   - [ ] Align `docs/reference.html` with `brio.css` baseline (keep only demo visual overrides).
-  - [ ] Add a `Functional CSS (brio.css)` contract section + feature matrix to `docs/brio.md`.
-  - [ ] Update `README.md` install snippet with `<link rel="stylesheet" href="brio.css">` and brief rationale.
+  - [x] Add a `Functional CSS (brio.css)` contract section + feature matrix to `docs/brio.md`.
+  - [x] Update `README.md` install snippet with `<link rel="stylesheet" href="brio.css">` and brief rationale.
   - [ ] Run v0.1 QA checklist: modal open/close/center/backdrop, modeless no scroll-jump, hidden consistency, feedback visibility, loading non-interactive state.
 
 ---
 
 ## Forms — submission
-- [ ] `data-fetch` boolean attribute on `<form>` opts into fetch interception; absent = native page reload.
-- [ ] Brio reads native `action` and `method` — no new attributes needed.
-- [ ] On submit with `data-fetch`: disable form, POST via fetch, re-enable on completion.
-- [ ] Submit button gets `data-state="loading"` during request — CSS handles spinner.
-- [ ] Response routed through `{ success, messages }` feedback system.
-- [ ] `{ success, messages }` server contract documented as a copy-paste block (HTML + server example).
+- [x] `data-fetch` boolean attribute on `<form>` opts into fetch interception; absent = native page reload.
+- [x] Brio reads native `action` and `method` — no new attributes needed.
+- [x] On submit with `data-fetch`: disable form, POST via fetch, re-enable on completion.
+- [x] Submit button gets `data-state="loading"` during request — CSS handles spinner.
+- [x] Response routed through `{ success, messages }` feedback system.
+- [x] `{ success, messages }` server contract documented as a copy-paste block (HTML + server example).
 - [ ] If pending autosave debounce exists when manual submit fires — cancel the pending autosave.
 - [ ] `postData` helper — POST companion to `getData`; handles `FormData`; sets correct headers; returns normalised `{ success, messages }`.
 

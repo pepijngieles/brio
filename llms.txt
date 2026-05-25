@@ -1,0 +1,31 @@
+# Brio
+
+> Lightweight declarative JavaScript framework for multi-page websites and web apps. Behaviour via data-attributes. No build step, no dependencies.
+
+## Docs
+
+- [BRIO.md](BRIO.md): condensed reference for AI assistants (~1500 tokens)
+- [docs/brio.md](docs/brio.md): full API reference
+- [docs/reference.html](docs/reference.html): interactive reference with live demos
+- [README.md](README.md): getting started and install
+
+## Install
+
+Modular (recommended for projects):
+
+```html
+<link rel="stylesheet" href="brio.css">
+<script src="utils.js" defer></script>
+<script src="actions.js" defer></script>
+<script src="binding.js" defer></script>
+<script src="dialogs.js" defer></script>
+<script src="feedback.js" defer></script>
+<script src="project.js" defer></script>
+```
+
+CDN (bundled):
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/dist/brio.css">
+<script src="https://cdn.jsdelivr.net/gh/pepijngieles/brio@v0.1.0/brio.js" defer></script>
+```

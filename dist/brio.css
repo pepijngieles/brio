@@ -42,6 +42,20 @@ dialog[open] {
   z-index: var(--brio-dialog-z);
 }
 
+/* Mobile: dialogs behave like bottom sheets */
+@media (max-width: 48rem) {
+  dialog[open]:not([data-modeless]) {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 dialog::backdrop {
   background: var(--brio-backdrop);
 }
@@ -49,6 +63,45 @@ dialog::backdrop {
 /* Modeless dialogs: avoid implicit backdrop expectation */
 dialog[data-modeless]::backdrop {
   background: transparent;
+}
+
+/* Optional dialog-sheet pattern: fixed header/footer + scrolling content */
+dialog.dialog-sheet {
+  border: 0;
+  padding: 0;
+  width: min(var(--dialog-max-width, 420px), calc(100vw - 16px));
+  max-width: min(var(--dialog-max-width, 420px), calc(100vw - 16px));
+  max-height: min(90vh, calc(100dvh - 16px));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.dialog-sheet[open]:not([data-modeless]) {
+  inset: 0;
+  margin: auto;
+  transform: none;
+}
+
+dialog.dialog-sheet::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+dialog .panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  min-height: 0;
+}
+
+dialog .content {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+dialog footer {
+  display: flex;
 }
 
 /* Prevent background scroll while a modal dialog is open */

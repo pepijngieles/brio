@@ -216,13 +216,56 @@ function configureSanitizeHtml(fn) {
 
 window.configureSanitizeHtml = configureSanitizeHtml;
 
+function collectElementNodes(root, { includeRoot = false } = {}) {
+  const nodes = [];
+  if (!root) return nodes;
+
+  if (includeRoot && root.nodeType === Node.ELEMENT_NODE) nodes.push(root);
+
+  if (root.querySelectorAll) {
+    nodes.push(...root.querySelectorAll('*'));
+    return nodes;
+  }
+
+  if (!root.childNodes) return nodes;
+
+  // DocumentFragment may not implement querySelectorAll (eg. iOS Safari).
+  const stack = Array.from(root.childNodes);
+  while (stack.length) {
+    const n = stack.pop();
+    if (!n) continue;
+    if (n.nodeType === Node.ELEMENT_NODE) {
+      nodes.push(n);
+      if (n.childNodes?.length) stack.push(...Array.from(n.childNodes));
+    }
+  }
+  return nodes;
+}
+
+function collectMatchingElements(root, selector, { includeRoot = false } = {}) {
+  const matches = [];
+  if (!root) return matches;
+
+  if (includeRoot && root.nodeType === Node.ELEMENT_NODE && root.matches?.(selector)) {
+    matches.push(root);
+  }
+
+  if (root.querySelectorAll) {
+    matches.push(...root.querySelectorAll(selector));
+    return matches;
+  }
+
+  for (const el of collectElementNodes(root, { includeRoot: false })) {
+    if (el.matches?.(selector)) matches.push(el);
+  }
+  return matches;
+}
+
 function indexBindingsWithin(root) {
   if (!root) return;
 
   // Text bindings: [data-bind]
-  const bindNodes = [];
-  if (root.nodeType === Node.ELEMENT_NODE && root.hasAttribute?.('data-bind')) bindNodes.push(root);
-  if (root.querySelectorAll) bindNodes.push(...root.querySelectorAll('[data-bind]'));
+  const bindNodes = collectMatchingElements(root, '[data-bind]', { includeRoot: true });
 
   for (const el of bindNodes) {
     if (indexedTextBindEls.has(el)) continue;
@@ -234,9 +277,7 @@ function indexBindingsWithin(root) {
   }
 
   // Attribute bindings: data-bind-*
-  const allNodes = [];
-  if (root.nodeType === Node.ELEMENT_NODE) allNodes.push(root);
-  if (root.querySelectorAll) allNodes.push(...root.querySelectorAll('*'));
+  const allNodes = collectElementNodes(root, { includeRoot: true });
 
   for (const el of allNodes) {
     if (indexedAttrBindEls.has(el)) continue;
@@ -264,21 +305,14 @@ function indexBindingsWithin(root) {
 
 function applyBindingsLocal(scope = document, context = null) {
   const root = scope || document;
-  const bindNodes = [];
-
-  if (root.nodeType === Node.ELEMENT_NODE && root.hasAttribute?.('data-bind')) {
-    bindNodes.push(root);
-  }
-  if (root.querySelectorAll) bindNodes.push(...root.querySelectorAll('[data-bind]'));
+  const bindNodes = collectMatchingElements(root, '[data-bind]', { includeRoot: true });
 
   for (const el of bindNodes) {
     const value = evaluateBindingExpression(el.dataset.bind, context);
     el.textContent = value == null ? '' : String(value);
   }
 
-  const allNodes = [];
-  if (root.nodeType === Node.ELEMENT_NODE) allNodes.push(root);
-  if (root.querySelectorAll) allNodes.push(...root.querySelectorAll('*'));
+  const allNodes = collectElementNodes(root, { includeRoot: true });
 
   for (const el of allNodes) {
     for (const [datasetKey, expression] of Object.entries(el.dataset || {})) {
@@ -331,10 +365,31 @@ function renderTemplateItems(target, templateId, items) {
     return;
   }
 
+  // Strip binding attributes after applying item context, so later full-document
+  // applyBindings(document) calls don't overwrite rendered template values.
+  function stripBindingAttributes(scope) {
+    const nodes = collectElementNodes(scope, { includeRoot: true });
+    const bindNodes = collectMatchingElements(scope, '[data-bind]');
+
+    for (const el of bindNodes) {
+      el.removeAttribute('data-bind');
+      for (const attr of Array.from(el.attributes)) {
+        if (attr.name.startsWith('data-bind-')) el.removeAttribute(attr.name);
+      }
+    }
+    for (const el of nodes) {
+      for (const attr of Array.from(el.attributes)) {
+        if (attr.name.startsWith('data-bind-')) el.removeAttribute(attr.name);
+      }
+    }
+  }
+
   for (const item of items) {
     const fragment = template.content.cloneNode(true);
-    indexBindingsWithin(fragment);
-    applyBindings(fragment, item);
+    // Apply bindings locally with item context; don't index these into the global
+    // refresh cache because they are now "rendered output", not reactive bindings.
+    applyBindingsLocal(fragment, item);
+    stripBindingAttributes(fragment);
     target.appendChild(fragment);
   }
 }
@@ -405,6 +460,27 @@ function applyAppend(append = [], form = null) {
   }
 }
 
+function failDataFetchSubmit(form, message, error) {
+  if (typeof showMessage === 'function') {
+    showMessage(form, message, 'error');
+  }
+  if (typeof enableForm === 'function' && form.id) enableForm(form.id);
+  if (error) console.warn('[binding] data-fetch submit failed:', error);
+}
+
+async function parseDataFetchResponse(form, response) {
+  if (!response.ok) {
+    failDataFetchSubmit(form, 'Request failed. Please try again.');
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch (error) {
+    failDataFetchSubmit(form, 'Request failed. Please try again.', error);
+    return null;
+  }
+}
+
 async function brioSubmitFetch(form, event) {
   if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-fetch')) return;
   if (event?.defaultPrevented) return;
@@ -416,30 +492,24 @@ async function brioSubmitFetch(form, event) {
     const method = (form.getAttribute('method') || 'GET').toUpperCase();
     const action = form.getAttribute('action') || window.location.href;
     const formData = new FormData(form);
-    const request = { method };
+    const request = { method, credentials: 'same-origin' };
 
     if (method === 'GET') {
       const url = new URL(action, window.location.href);
       for (const [key, value] of formData.entries()) url.searchParams.set(key, value);
-      request.credentials = 'same-origin';
       const response = await fetch(url.toString(), request);
-      const data = await response.json();
-      handleFetchResponse(form, data);
+      const data = await parseDataFetchResponse(form, response);
+      if (data) handleFetchResponse(form, data);
       return;
     }
 
     request.body = formData;
-    request.credentials = 'same-origin';
 
     const response = await fetch(action, request);
-    const data = await response.json();
-    handleFetchResponse(form, data);
+    const data = await parseDataFetchResponse(form, response);
+    if (data) handleFetchResponse(form, data);
   } catch (error) {
-    if (typeof showMessage === 'function') {
-      showMessage(form, 'Request failed. Please try again.', 'error');
-    }
-    if (typeof enableForm === 'function' && form.id) enableForm(form.id);
-    console.warn('[binding] data-fetch submit failed:', error);
+    failDataFetchSubmit(form, 'Request failed. Please try again.', error);
   }
 }
 

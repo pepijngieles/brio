@@ -67,8 +67,11 @@ function handleEvents(event) {
     disableForm(event.target.id);
   }
 
-  // Fire data-action if present on the target or any ancestor
-  const targetElement = event.target.closest(`[data-${event.type}]:not([disabled])`);
+  // Fire data-action if present on the target or any ancestor.
+  // Text nodes (e.g. click on button label) have no closest() — use parentElement.
+  const rawTarget = event.target;
+  const targetEl = rawTarget instanceof Element ? rawTarget : rawTarget?.parentElement;
+  const targetElement = targetEl?.closest(`[data-${event.type}]:not([disabled])`);
   if (targetElement) {
     determineAction(targetElement, event, targetElement.dataset[event.type]);
   }
@@ -276,6 +279,17 @@ function validateBrioHtmlOnInit() {
     if (!id) continue;
     if (!document.getElementById(id)) {
       console.warn(`[feedback] [data-message][data-for="${id}"] points to missing #${id}.`, region);
+    }
+  }
+
+  // Validate data-fetch forms — enableForm requires a form id.
+  for (const form of document.querySelectorAll('form[data-fetch]')) {
+    if (!form.id) {
+      console.warn('[binding] form[data-fetch] should have an id so enableForm can re-enable after submit.', form);
+    }
+    const appendTarget = form.getAttribute('data-fetch-append-target');
+    if (appendTarget && !form.querySelector(appendTarget)) {
+      console.warn(`[binding] form[data-fetch-append-target="${appendTarget}"] did not match any element inside the form.`, form);
     }
   }
 
