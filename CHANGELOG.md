@@ -7,6 +7,7 @@ All notable changes to this project are documented here.
 ### Fixed
 
 - `dialog.dialog-sheet` no longer sets `display: flex` when closed, so sheets stay hidden until opened (regression vs. `dialog:not([open])`).
+- `toggleClassName` no longer throws when called via `data-click` (inner `el` binding shadowed the trigger parameter).
 
 ## [0.1.0] — 2026-05-25
 

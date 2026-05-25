@@ -450,12 +450,12 @@ function toggleClassName(el, className, target) {
       console.warn('[toggleClassName] Expected "target,className" e.g. toggleClassName(test,open)');
       return;
     }
-    const el = actionElTarget === 'this' ? triggerEl : resolveToggleTarget(actionElTarget);
-    if (!el) {
+    const targetEl = actionElTarget === 'this' ? triggerEl : resolveToggleTarget(actionElTarget);
+    if (!targetEl) {
       console.warn(`[toggleClassName] No element found for target: "${actionElTarget}"`);
       return;
     }
-    el.classList.toggle(actionClassName);
+    targetEl.classList.toggle(actionClassName);
     return;
   }
 
