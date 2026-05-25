@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- `dialog.dialog-sheet` no longer sets `display: flex` when closed, so sheets stay hidden until opened (regression vs. `dialog:not([open])`).
+
 ## [0.1.0] — 2026-05-25
 
 ### Added

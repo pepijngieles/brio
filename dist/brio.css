@@ -73,6 +73,13 @@ dialog.dialog-sheet {
   max-width: min(var(--dialog-max-width, 420px), calc(100vw - 16px));
   max-height: min(90vh, calc(100dvh - 16px));
   overflow: hidden;
+}
+
+dialog.dialog-sheet:not([open]) {
+  display: none;
+}
+
+dialog.dialog-sheet[open] {
   display: flex;
   flex-direction: column;
 }
